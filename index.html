@@ -7,9 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --swim:#0ea5e9;--bike:#22c55e;--run:#f97316;--brick:#8b5cf6;--renfo:#ec4899;--rest:#94a3b8;--race:#f59e0b;
+  --swim:#7dd3fc;--bike:#86efac;--run:#f97316;--brick:#c084fc;--renfo:#f472b6;--rest:#94a3b8;--race:#e11d48;
   --bg:#0f1117;--bg2:#161b27;--bg3:#1e2535;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
   --text:#f1f5f9;--muted:#94a3b8;--muted2:#64748b;
+  --accent:#e11d48;--accent2:#be123c;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
@@ -19,7 +20,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2
 .nav-tab{padding:6px 16px;border-radius:99px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;background:transparent;color:var(--muted);transition:all 0.2s;}
 .nav-tab.active{background:var(--bg3);color:var(--text);}
 .nav-tab:hover:not(.active){color:var(--text);}
-.race-countdown{font-family:'DM Mono',monospace;font-size:12px;color:var(--race);background:rgba(245,158,11,0.1);padding:5px 12px;border-radius:99px;border:1px solid rgba(245,158,11,0.2);}
+.race-countdown{font-family:'DM Mono',monospace;font-size:12px;color:var(--race);background:rgba(225,29,72,0.1);padding:5px 12px;border-radius:99px;border:1px solid rgba(225,29,72,0.25);}
 main{max-width:1160px;margin:0 auto;padding:2rem;}
 .page{display:none;}.page.active{display:block;}
 .hero{margin-bottom:2rem;}
@@ -38,10 +39,10 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 .phase-base{background:rgba(14,165,233,.15);color:var(--swim);border:1px solid rgba(14,165,233,.2);}
 .phase-build{background:rgba(34,197,94,.12);color:var(--bike);border:1px solid rgba(34,197,94,.2);}
 .phase-peak{background:rgba(249,115,22,.12);color:var(--run);border:1px solid rgba(249,115,22,.2);}
-.phase-taper{background:rgba(245,158,11,.12);color:var(--race);border:1px solid rgba(245,158,11,.2);}
+.phase-taper{background:rgba(225,29,72,.12);color:var(--race);border:1px solid rgba(225,29,72,.25);}
 .week-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;overflow:hidden;transition:border-color .2s;}
 .week-card:hover{border-color:var(--border2);}
-.week-card.current{border-color:rgba(245,158,11,.4);}
+.week-card.current{border-color:rgba(225,29,72,.45);}
 .week-card.completed{opacity:.65;}
 .week-header{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;cursor:pointer;user-select:none;}
 .week-title-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -71,7 +72,7 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 .tag-brick{background:rgba(139,92,246,.15);color:var(--brick);}
 .tag-renfo{background:rgba(236,72,153,.12);color:var(--renfo);}
 .tag-rest{background:var(--bg);color:var(--muted2);}
-.tag-race{background:rgba(245,158,11,.15);color:var(--race);}
+.tag-race{background:rgba(225,29,72,.15);color:var(--race);}
 .day-desc{font-size:11px;color:var(--muted);line-height:1.5;}
 .day-extra{font-size:10px;color:var(--muted2);margin-top:4px;font-style:italic;line-height:1.4;}
 .day-warn{font-size:10px;color:#fb923c;margin-top:4px;}
@@ -80,7 +81,7 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 .day-cell.logged{border-color:rgba(34,197,94,.3);}
 .day-cell.logged .log-btn{color:var(--bike);border-color:rgba(34,197,94,.3);}
 .done-check{position:absolute;top:6px;right:6px;color:var(--bike);font-size:12px;}
-.vacances-banner{background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(245,158,11,.08));border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:9px 14px;margin-bottom:10px;font-size:12px;color:#fdba74;display:flex;align-items:center;gap:8px;}
+.vacances-banner{background:linear-gradient(135deg,rgba(225,29,72,.08),rgba(190,18,60,.08));border:1px solid rgba(225,29,72,.2);border-radius:10px;padding:9px 14px;margin-bottom:10px;font-size:12px;color:#fda4af;display:flex;align-items:center;gap:8px;}
 /* RENFO */
 .zones-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem;}
 .zone-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1rem;}
@@ -131,12 +132,12 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 .rating-btn.selected{background:var(--bg2);border-color:var(--border2);filter:brightness(1.3);}
 .modal-actions{display:flex;gap:8px;margin-top:1.25rem;}
 .btn-cancel{flex:1;padding:10px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;}
-.btn-save{flex:2;padding:10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.25);border-radius:10px;color:var(--bike);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
-.btn-save:hover{background:rgba(34,197,94,.25);}
+.btn-save{flex:2;padding:10px;background:rgba(225,29,72,.15);border:1px solid rgba(225,29,72,.3);border-radius:10px;color:var(--race);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-save:hover{background:rgba(225,29,72,.25);}
 .wellness-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.875rem;}
 .score-selector{display:flex;gap:3px;flex-wrap:wrap;}
 .score-btn{width:28px;height:28px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.score-btn.selected{background:rgba(245,158,11,.2);border-color:var(--race);color:var(--race);}
+.score-btn.selected{background:rgba(225,29,72,.2);border-color:var(--race);color:var(--race);}
 /* JOURNAL */
 .journal-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.5rem;}
 .log-entry{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.875rem 1.25rem;margin-bottom:8px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;}
@@ -160,10 +161,10 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 .tip-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:10px;}
 .tip-title-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
 .tip-body{font-size:13px;color:var(--muted);line-height:1.7;}
-.badge-complete{display:inline-block;background:rgba(34,197,94,.12);color:var(--bike);font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(34,197,94,.2);}
-.badge-current{display:inline-block;background:rgba(245,158,11,.12);color:var(--race);font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(245,158,11,.2);}
+.badge-complete{display:inline-block;background:rgba(134,239,172,.12);color:var(--bike);font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(134,239,172,.2);}
+.badge-current{display:inline-block;background:rgba(225,29,72,.12);color:var(--race);font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(225,29,72,.25);}
 .badge-upcoming{display:inline-block;background:var(--bg3);color:var(--muted2);font-size:10px;padding:2px 8px;border-radius:99px;}
-.badge-vacances{display:inline-block;background:rgba(249,115,22,.12);color:#fdba74;font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(249,115,22,.2);}
+.badge-vacances{display:inline-block;background:rgba(225,29,72,.1);color:#fda4af;font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(225,29,72,.2);}
 @media(max-width:900px){
   .days-grid{grid-template-columns:repeat(4,1fr);}
   .stats-row{grid-template-columns:repeat(3,1fr);}
@@ -192,11 +193,11 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 <div id="page-plan" class="page active">
   <div class="hero">
     <h1>Plan <em>Verdun M</em></h1>
-    <p>Sub 3h · 28 ans · 163 cm / 57 kg · Vélo prioritaire · Périostite en guérison · 6–10h/semaine · 8 août 2026</p>
+    <p>Sub 3h · Vélo prioritaire · Périostite en guérison · 6–10h/semaine · 8 août 2026</p>
   </div>
   <div class="stats-row">
     <div class="stat-card"><div class="stat-label">Nage 1500m</div><div class="stat-value c-swim">31–33 min</div><div class="stat-sub">~2:05/100m</div></div>
-    <div class="stat-card"><div class="stat-label">Vélo 40 km</div><div class="stat-value c-bike">1h30–1h40</div><div class="stat-sub">priorité du plan</div></div>
+    <div class="stat-card"><div class="stat-label">Vélo 40 km</div><div class="stat-value c-bike">1h30–1h40</div><div class="stat-sub">~24–27 km/h · priorité</div></div>
     <div class="stat-card"><div class="stat-label">CAP 10 km</div><div class="stat-value c-run">50–53 min</div><div class="stat-sub">~5:05–5:18/km</div></div>
     <div class="stat-card"><div class="stat-label">Transitions</div><div class="stat-value c-race">4–5 min</div><div class="stat-sub">T1 + T2</div></div>
     <div class="stat-card"><div class="stat-label">Total cible</div><div class="stat-value">2h45–2h58</div><div class="stat-sub">objectif sub 3h</div></div>
@@ -737,6 +738,8 @@ function renderJournal(){
 // ============================================================
 // STATS
 // ============================================================
+function fmtMin(min){ if(!min||min===0) return '0h00'; return `${Math.floor(min/60)}h${String(Math.round(min%60)).padStart(2,'0')}`; }
+
 function renderStats(){
   const container=document.getElementById('stats-content'),tipsC=document.getElementById('ai-tips'),wellC=document.getElementById('wellness-chart');
   if(!logs.length){container.innerHTML=`<div class="chart-card full"><div class="empty-state"><div class="big">📊</div><p>Log tes premières séances.</p></div></div>`;tipsC.innerHTML='';wellC.innerHTML='';return;}
@@ -762,6 +765,30 @@ function renderStats(){
     const d=Math.round((first-last)*60);
     paceHtml=`<div style="background:var(--bg3);border-radius:8px;padding:10px;grid-column:span 2;font-size:12px;color:${d>0?'var(--bike)':'var(--run)'}">CAP : allure ${d>0?'améliorée de '+d+' sec/km ↑':'inchangée ou plus lente de '+Math.abs(d)+' sec/km'} entre S${PLAN[runLogs[0].wi]?.week||1} et S${PLAN[runLogs[runLogs.length-1].wi]?.week||runLogs.length}</div>`;
   }
+
+  // Planned vs actual — compte les séances prévues dans les semaines passées + en cours
+  const plannedByType={swim:0,bike:0,run:0,brick:0,renfo:0};
+  const actualByType={...counts};
+  PLAN.forEach((week,wi)=>{
+    if(isWeekPast(wi)||isWeekCurrent(wi)){
+      week.days.forEach(d=>{
+        if(plannedByType[d.type]!==undefined) plannedByType[d.type]++;
+      });
+    }
+  });
+  const totalPlanned=Object.values(plannedByType).reduce((a,b)=>a+b,0);
+  const totalActual=logs.length;
+  const adherencePct=totalPlanned>0?Math.round(totalActual/totalPlanned*100):0;
+
+  // Volume prévu estimé (basé sur durées moyennes par type)
+  const avgDurByType={swim:55,bike:110,run:55,brick:90,renfo:35};
+  let plannedMinTotal=0;
+  PLAN.forEach((week,wi)=>{
+    if(isWeekPast(wi)||isWeekCurrent(wi)){
+      week.days.forEach(d=>{ if(avgDurByType[d.type]) plannedMinTotal+=avgDurByType[d.type]; });
+    }
+  });
+
   container.innerHTML=`
   <div class="chart-card"><div class="chart-title">Séances par discipline</div>
     ${[['swim','Nage',counts.swim],['bike','Vélo',counts.bike],['run','CAP',counts.run],['brick','Briques',counts.brick],['renfo','Renfo',counts.renfo]].map(([t,l,c])=>`
@@ -774,10 +801,37 @@ function renderStats(){
   <div class="chart-card"><div class="chart-title">Chiffres clés</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Séances</div><div style="font-family:'DM Mono',monospace;font-size:20px">${logs.length}</div></div>
-      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Volume</div><div style="font-family:'DM Mono',monospace;font-size:20px">${Math.floor(totalMin/60)}h${String(totalMin%60).padStart(2,'0')}</div></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Volume logué</div><div style="font-family:'DM Mono',monospace;font-size:20px">${fmtMin(totalMin)}</div></div>
       <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Ressenti</div><div style="font-size:20px">${avgF!=='—'?feelingEmoji[Math.round(parseFloat(avgF))]:'—'} <span style="font-family:'DM Mono',monospace;font-size:12px">${avgF}</span></div></div>
-      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Tibia moy.</div><div style="font-family:'DM Mono',monospace;font-size:20px;color:${parseFloat(avgT)>3?'var(--race)':parseFloat(avgT)>1?'#fdba74':'var(--bike)'}">${avgT}/10</div></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Tibia moy.</div><div style="font-family:'DM Mono',monospace;font-size:20px;color:${parseFloat(avgT)>3?'var(--race)':parseFloat(avgT)>1?'#fda4af':'var(--bike)'}">${avgT}/10</div></div>
       ${paceHtml}
+    </div>
+  </div>
+  <div class="chart-card full"><div class="chart-title">Prévu vs Réalisé — semaines écoulées</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+      <div style="background:var(--bg3);border-radius:10px;padding:12px">
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Séances prévues</div>
+        <div style="font-family:'DM Mono',monospace;font-size:28px;color:var(--muted)">${totalPlanned}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:12px">
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Séances réalisées</div>
+        <div style="font-family:'DM Mono',monospace;font-size:28px;color:var(--race)">${totalActual}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:12px">
+        <div style="font-size:10px;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Adhérence</div>
+        <div style="font-family:'DM Mono',monospace;font-size:28px;color:${adherencePct>=80?'var(--bike)':adherencePct>=50?'var(--run)':'var(--race)'}">${adherencePct}%</div>
+        <div style="margin-top:8px;height:5px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="height:100%;width:${Math.min(adherencePct,100)}%;background:${adherencePct>=80?'var(--bike)':adherencePct>=50?'var(--run)':'var(--race)'};border-radius:99px;transition:width .6s"></div></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      ${[['swim','🏊 Nage'],['bike','🚴 Vélo'],['run','🏃 CAP'],['brick','🧱 Briques'],['renfo','💪 Renfo']].map(([t,l])=>{
+        const p=plannedByType[t],a=actualByType[t],pct=p>0?Math.min(Math.round(a/p*100),100):0;
+        return `<div style="background:var(--bg3);border-radius:8px;padding:9px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">${l}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:16px;color:${getColor(t)}">${a}<span style="font-size:11px;color:var(--muted2)">/${p}</span></div>
+          <div style="margin-top:6px;height:4px;background:var(--bg2);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${getColor(t)};border-radius:99px"></div></div>
+        </div>`;
+      }).join('')}
     </div>
   </div>
   <div class="chart-card full"><div class="chart-title">Séances par semaine</div>
