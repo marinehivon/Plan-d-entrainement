@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triathlon Verdun — Plan Marine</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --swim:#0ea5e9;--bike:#22c55e;--run:#f97316;--brick:#8b5cf6;--renfo:#ec4899;--rest:#94a3b8;--race:#f59e0b;
+  --bg:#0f1117;--bg2:#161b27;--bg3:#1e2535;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f1f5f9;--muted:#94a3b8;--muted2:#64748b;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100;}
+.logo{font-family:'DM Serif Display',serif;font-size:18px;}.logo span{color:var(--race);}
+.nav-tabs{display:flex;gap:4px;}
+.nav-tab{padding:6px 16px;border-radius:99px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;background:transparent;color:var(--muted);transition:all 0.2s;}
+.nav-tab.active{background:var(--bg3);color:var(--text);}
+.nav-tab:hover:not(.active){color:var(--text);}
+.race-countdown{font-family:'DM Mono',monospace;font-size:12px;color:var(--race);background:rgba(245,158,11,0.1);padding:5px 12px;border-radius:99px;border:1px solid rgba(245,158,11,0.2);}
+main{max-width:1160px;margin:0 auto;padding:2rem;}
+.page{display:none;}.page.active{display:block;}
+.hero{margin-bottom:2rem;}
+.hero h1{font-family:'DM Serif Display',serif;font-size:40px;line-height:1.1;margin-bottom:.5rem;}
+.hero h1 em{color:var(--race);font-style:italic;}
+.hero p{color:var(--muted);font-size:14px;}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.75rem;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.875rem;}
+.stat-label{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.stat-value{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.c-swim{color:var(--swim);}.c-bike{color:var(--bike);}.c-run{color:var(--run);}.c-race{color:var(--race);}
+.phase-divider{display:flex;align-items:center;gap:12px;margin:1.75rem 0 .875rem;}
+.phase-line{flex:1;height:1px;background:var(--border);}
+.phase-pill{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:4px 14px;border-radius:99px;}
+.phase-base{background:rgba(14,165,233,.15);color:var(--swim);border:1px solid rgba(14,165,233,.2);}
+.phase-build{background:rgba(34,197,94,.12);color:var(--bike);border:1px solid rgba(34,197,94,.2);}
+.phase-peak{background:rgba(249,115,22,.12);color:var(--run);border:1px solid rgba(249,115,22,.2);}
+.phase-taper{background:rgba(245,158,11,.12);color:var(--race);border:1px solid rgba(245,158,11,.2);}
+.week-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;overflow:hidden;transition:border-color .2s;}
+.week-card:hover{border-color:var(--border2);}
+.week-card.current{border-color:rgba(245,158,11,.4);}
+.week-card.completed{opacity:.65;}
+.week-header{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;cursor:pointer;user-select:none;}
+.week-title-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.week-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);background:var(--bg3);padding:3px 8px;border-radius:6px;}
+.week-title{font-size:14px;font-weight:500;}
+.week-dates{font-size:12px;color:var(--muted);}
+.week-right{display:flex;align-items:center;gap:10px;}
+.week-load{font-size:12px;}
+.week-progress-bar{width:80px;height:4px;background:var(--bg3);border-radius:99px;overflow:hidden;}
+.week-progress-fill{height:100%;border-radius:99px;transition:width .5s;background:var(--bike);}
+.chevron{color:var(--muted2);font-size:10px;transition:transform .2s;}
+.week-card.open .chevron{transform:rotate(180deg);}
+.week-body{display:none;padding:0 1.25rem 1.25rem;}
+.week-card.open .week-body{display:block;}
+.week-goal{background:var(--bg3);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--muted);margin-bottom:10px;border-left:3px solid rgba(255,255,255,.1);}
+.week-goal strong{color:var(--text);}
+.week-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.week-summary span{font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:99px;padding:3px 10px;color:var(--muted);}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;}
+.day-cell{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px;min-height:105px;position:relative;transition:border-color .2s;}
+.day-cell.rest-day{opacity:.4;}
+.day-name{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted2);margin-bottom:5px;}
+.session-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;margin-bottom:5px;}
+.tag-swim{background:rgba(14,165,233,.15);color:var(--swim);}
+.tag-bike{background:rgba(34,197,94,.12);color:var(--bike);}
+.tag-run{background:rgba(249,115,22,.12);color:var(--run);}
+.tag-brick{background:rgba(139,92,246,.15);color:var(--brick);}
+.tag-renfo{background:rgba(236,72,153,.12);color:var(--renfo);}
+.tag-rest{background:var(--bg);color:var(--muted2);}
+.tag-race{background:rgba(245,158,11,.15);color:var(--race);}
+.day-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.day-extra{font-size:10px;color:var(--muted2);margin-top:4px;font-style:italic;line-height:1.4;}
+.day-warn{font-size:10px;color:#fb923c;margin-top:4px;}
+.log-btn{position:absolute;bottom:6px;right:6px;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:10px;padding:2px 6px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;}
+.log-btn:hover{color:var(--text);border-color:rgba(255,255,255,.3);}
+.day-cell.logged{border-color:rgba(34,197,94,.3);}
+.day-cell.logged .log-btn{color:var(--bike);border-color:rgba(34,197,94,.3);}
+.done-check{position:absolute;top:6px;right:6px;color:var(--bike);font-size:12px;}
+.vacances-banner{background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(245,158,11,.08));border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:9px 14px;margin-bottom:10px;font-size:12px;color:#fdba74;display:flex;align-items:center;gap:8px;}
+/* RENFO */
+.zones-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem;}
+.zone-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1rem;}
+.zone-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;}
+.zone-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.zone-row:last-child{border-bottom:none;}
+.zone-name{color:var(--muted);}
+.zone-value{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);}
+.renfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;}
+.renfo-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;}
+.renfo-title{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:3px;}
+.renfo-sub{font-size:12px;color:var(--muted);margin-bottom:.875rem;}
+.exercise-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.exercise-row:last-child{border-bottom:none;}
+.ex-sets{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.mobility-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:14px;}
+/* NUTRITION */
+.nutrition-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem;}
+.nutr-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1rem;}
+.nutr-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
+.nutr-item{font-size:12px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);}
+.nutr-item:last-child{border-bottom:none;}
+/* RACE */
+.race-section{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:14px;}
+.race-section h3{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:.875rem;}
+.race-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+.race-phase{background:var(--bg3);border-radius:10px;padding:.875rem;}
+.race-phase-title{font-size:12px;font-weight:600;margin-bottom:6px;}
+.race-phase-content{font-size:11px;color:var(--muted);line-height:1.6;}
+.checklist{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.check-group{background:var(--bg3);border-radius:10px;padding:.875rem;}
+.check-title{font-size:12px;font-weight:600;margin-bottom:6px;}
+.check-item{font-size:11px;color:var(--muted);padding:3px 0;display:flex;align-items:center;gap:6px;}
+.check-item::before{content:'○';font-size:10px;color:var(--muted2);}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:1.75rem;width:450px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal h3{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:1.25rem;}
+.form-group{margin-bottom:.875rem;}
+.form-label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:rgba(255,255,255,.25);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.rating-group{display:flex;gap:6px;}
+.rating-btn{flex:1;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);font-size:18px;text-align:center;transition:all .15s;font-family:'Outfit',sans-serif;}
+.rating-btn.selected{background:var(--bg2);border-color:var(--border2);filter:brightness(1.3);}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem;}
+.btn-cancel{flex:1;padding:10px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;}
+.btn-save{flex:2;padding:10px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.25);border-radius:10px;color:var(--bike);font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-save:hover{background:rgba(34,197,94,.25);}
+.wellness-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.875rem;}
+.score-selector{display:flex;gap:3px;flex-wrap:wrap;}
+.score-btn{width:28px;height:28px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);font-size:11px;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.score-btn.selected{background:rgba(245,158,11,.2);border-color:var(--race);color:var(--race);}
+/* JOURNAL */
+.journal-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.5rem;}
+.log-entry{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.875rem 1.25rem;margin-bottom:8px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;}
+.entry-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.entry-top{font-size:13px;font-weight:500;margin-bottom:3px;}
+.entry-meta{font-size:11px;color:var(--muted);}
+.entry-feeling{font-size:20px;}
+.wellness-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+.wellness-badge{font-size:10px;background:var(--bg3);border-radius:99px;padding:2px 7px;color:var(--muted);border:1px solid var(--border);}
+.empty-state{text-align:center;padding:4rem;color:var(--muted);}
+.empty-state .big{font-size:48px;margin-bottom:1rem;}
+/* STATS */
+.stats-page-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;}
+.chart-card.full{grid-column:span 2;}
+.chart-title{font-size:11px;font-weight:500;color:var(--muted);margin-bottom:.875rem;text-transform:uppercase;letter-spacing:.05em;}
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:110px;}
+.bar-group{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.bar{width:100%;border-radius:4px 4px 0 0;transition:height .5s;min-height:2px;}
+.bar-label{font-size:10px;color:var(--muted2);}
+.tip-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:10px;}
+.tip-title-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.tip-body{font-size:13px;color:var(--muted);line-height:1.7;}
+.badge-complete{display:inline-block;background:rgba(34,197,94,.12);color:var(--bike);font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(34,197,94,.2);}
+.badge-current{display:inline-block;background:rgba(245,158,11,.12);color:var(--race);font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(245,158,11,.2);}
+.badge-upcoming{display:inline-block;background:var(--bg3);color:var(--muted2);font-size:10px;padding:2px 8px;border-radius:99px;}
+.badge-vacances{display:inline-block;background:rgba(249,115,22,.12);color:#fdba74;font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid rgba(249,115,22,.2);}
+@media(max-width:900px){
+  .days-grid{grid-template-columns:repeat(4,1fr);}
+  .stats-row{grid-template-columns:repeat(3,1fr);}
+  .zones-grid,.nutrition-grid,.renfo-grid{grid-template-columns:1fr;}
+  nav{padding:.75rem 1rem;}
+  main{padding:1rem;}
+  .hero h1{font-size:28px;}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">Tri<span>Verdun</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('plan',this)">Plan</button>
+    <button class="nav-tab" onclick="showPage('renfo',this)">Renfo & Zones</button>
+    <button class="nav-tab" onclick="showPage('race',this)">Race Day</button>
+    <button class="nav-tab" onclick="showPage('journal',this)">Journal</button>
+    <button class="nav-tab" onclick="showPage('stats',this)">Stats</button>
+  </div>
+  <div class="race-countdown" id="countdown">—</div>
+</nav>
+<main>
+
+<!-- PLAN -->
+<div id="page-plan" class="page active">
+  <div class="hero">
+    <h1>Plan <em>Verdun M</em></h1>
+    <p>Sub 3h · 28 ans · 163 cm / 57 kg · Vélo prioritaire · Périostite en guérison · 6–10h/semaine · 8 août 2026</p>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Nage 1500m</div><div class="stat-value c-swim">31–33 min</div><div class="stat-sub">~2:05/100m</div></div>
+    <div class="stat-card"><div class="stat-label">Vélo 40 km</div><div class="stat-value c-bike">1h30–1h40</div><div class="stat-sub">priorité du plan</div></div>
+    <div class="stat-card"><div class="stat-label">CAP 10 km</div><div class="stat-value c-run">50–53 min</div><div class="stat-sub">~5:05–5:18/km</div></div>
+    <div class="stat-card"><div class="stat-label">Transitions</div><div class="stat-value c-race">4–5 min</div><div class="stat-sub">T1 + T2</div></div>
+    <div class="stat-card"><div class="stat-label">Total cible</div><div class="stat-value">2h45–2h58</div><div class="stat-sub">objectif sub 3h</div></div>
+  </div>
+  <div id="timeline"></div>
+</div>
+
+<!-- RENFO & ZONES -->
+<div id="page-renfo" class="page">
+  <div class="hero">
+    <h1>Renfo & <em>Zones</em></h1>
+    <p>Zones d'intensité · Renforcement musculaire · Mobilité quotidienne</p>
+  </div>
+  <div class="zones-grid">
+    <div class="zone-card">
+      <div class="zone-title" style="color:var(--run)">🏃 CAP — Zones</div>
+      <div class="zone-row"><span class="zone-name">EF / Z2</span><span class="zone-value">6:00–6:35/km · 135–150 bpm</span></div>
+      <div class="zone-row"><span class="zone-name">Tempo</span><span class="zone-value">5:20–5:35/km · 155–165 bpm</span></div>
+      <div class="zone-row"><span class="zone-name">Seuil</span><span class="zone-value">5:00–5:10/km · 165–175 bpm</span></div>
+      <div class="zone-row"><span class="zone-name">Intervalles</span><span class="zone-value">4:40–4:55/km · 175–185 bpm</span></div>
+    </div>
+    <div class="zone-card">
+      <div class="zone-title" style="color:var(--bike)">🚴 Vélo — Ressenti</div>
+      <div class="zone-row"><span class="zone-name">Z2 endurance</span><span class="zone-value">conversation facile</span></div>
+      <div class="zone-row"><span class="zone-name">Tempo</span><span class="zone-value">soutenu contrôlé</span></div>
+      <div class="zone-row"><span class="zone-name">Seuil</span><span class="zone-value">difficile mais stable</span></div>
+      <div class="zone-row"><span class="zone-name">VO2max</span><span class="zone-value">très difficile, court</span></div>
+    </div>
+    <div class="zone-card">
+      <div class="zone-title" style="color:var(--swim)">🏊 Natation</div>
+      <div class="zone-row"><span class="zone-name">Allure course</span><span class="zone-value">~2:05/100m</span></div>
+      <div class="zone-row"><span class="zone-name">Seuil</span><span class="zone-value">~1:55–2:00/100m</span></div>
+      <div class="zone-row"><span class="zone-name">Endurance</span><span class="zone-value">confortable bi-latéral</span></div>
+      <div class="zone-row"><span class="zone-name">Sprint</span><span class="zone-value">max effort 25–50m</span></div>
+    </div>
+  </div>
+  <div class="renfo-grid">
+    <div class="renfo-card">
+      <div class="renfo-title">Renfo A</div>
+      <div class="renfo-sub">Prévention périostite + stabilité — 30–35 min</div>
+      <div class="exercise-row"><span class="ex-name">Squats poids du corps</span><span class="ex-sets">3 × 15</span></div>
+      <div class="exercise-row"><span class="ex-name">Fentes arrière</span><span class="ex-sets">3 × 10 / jambe</span></div>
+      <div class="exercise-row"><span class="ex-name">Pont fessier</span><span class="ex-sets">3 × 15</span></div>
+      <div class="exercise-row"><span class="ex-name">Tibial raises ⚠️</span><span class="ex-sets">3 × 15</span></div>
+      <div class="exercise-row"><span class="ex-name">Mollets debout</span><span class="ex-sets">3 × 20</span></div>
+      <div class="exercise-row"><span class="ex-name">Gainage avant</span><span class="ex-sets">3 × 45 sec</span></div>
+      <div class="exercise-row"><span class="ex-name">Side plank</span><span class="ex-sets">3 × 30 sec</span></div>
+    </div>
+    <div class="renfo-card">
+      <div class="renfo-title">Renfo B</div>
+      <div class="renfo-sub">Performance triathlon — 30–40 min</div>
+      <div class="exercise-row"><span class="ex-name">Split squat</span><span class="ex-sets">3 × 10</span></div>
+      <div class="exercise-row"><span class="ex-name">Soulevé de terre unilatéral</span><span class="ex-sets">3 × 10</span></div>
+      <div class="exercise-row"><span class="ex-name">Dead bug</span><span class="ex-sets">3 × 12</span></div>
+      <div class="exercise-row"><span class="ex-name">Bird dog</span><span class="ex-sets">3 × 12</span></div>
+      <div class="exercise-row"><span class="ex-name">Pompes</span><span class="ex-sets">3 × 10–15</span></div>
+      <div class="exercise-row"><span class="ex-name">Bande élastique épaules</span><span class="ex-sets">3 × 15</span></div>
+      <div class="exercise-row"><span class="ex-name">Hollow hold</span><span class="ex-sets">3 × 30 sec</span></div>
+    </div>
+  </div>
+  <div class="mobility-card">
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:3px">Routine mobilité quotidienne</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:.875rem">8–10 min · après séance ou le soir</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div style="background:var(--bg3);border-radius:8px;padding:9px;font-size:12px"><strong>Étirements mollets</strong><br><span style="color:var(--muted)">2 × 30 sec</span></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px;font-size:12px"><strong>Mobilité chevilles</strong><br><span style="color:var(--muted)">2 min</span></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px;font-size:12px"><strong>Ouverture hanches</strong><br><span style="color:var(--muted)">2 min</span></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px;font-size:12px"><strong>Rotation thoracique</strong><br><span style="color:var(--muted)">2 min</span></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px;font-size:12px"><strong>Foam roll mollets/quads</strong><br><span style="color:var(--muted)">3 min</span></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px;font-size:12px"><strong>Tibial raises ⚠️</strong><br><span style="color:var(--muted)">2 × 15</span></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#fdba74;background:rgba(249,115,22,.08);border-radius:8px;padding:8px 12px;border:1px solid rgba(249,115,22,.2)">⚠️ Périostite : si douleur tibia >3/10 pendant la CAP → réduire immédiatement. Sinon remplacer par vélo ou natation.</div>
+  </div>
+  <div class="nutrition-grid">
+    <div class="nutr-card">
+      <div class="nutr-title" style="color:var(--run)">Avant séance longue</div>
+      <div class="nutr-item">2–3h avant : glucides simples</div>
+      <div class="nutr-item">Bagel + banane + beurre d'arachide</div>
+      <div class="nutr-item">Hydratation ++ avant</div>
+    </div>
+    <div class="nutr-card">
+      <div class="nutr-title" style="color:var(--bike)">Pendant vélo >90 min</div>
+      <div class="nutr-item">40–60 g glucides / heure</div>
+      <div class="nutr-item">500–750 ml eau / heure</div>
+      <div class="nutr-item">Électrolytes si chaud</div>
+    </div>
+    <div class="nutr-card">
+      <div class="nutr-title" style="color:var(--swim)">Après entraînement</div>
+      <div class="nutr-item">Dans les 30–60 min</div>
+      <div class="nutr-item">Protéines + glucides</div>
+      <div class="nutr-item">Réhydratation complète</div>
+    </div>
+  </div>
+</div>
+
+<!-- RACE DAY -->
+<div id="page-race" class="page">
+  <div class="hero">
+    <h1>Race <em>Day</em></h1>
+    <p>8 août 2026 · Stratégie de course · Checklist matériel · Nutrition</p>
+  </div>
+  <div class="race-section">
+    <h3>🌅 Matin avant course</h3>
+    <div style="font-size:13px;color:var(--muted);line-height:1.8">
+      <strong style="color:var(--text)">Petit-déjeuner 3h avant :</strong> bagel + banane + beurre d'arachide + boisson électrolytes. Glucides simples, peu de fibres.<br>
+      <strong style="color:var(--text)">Échauffement natation :</strong> 5–10 min nage facile si possible + quelques accélérations courtes.<br>
+      <strong style="color:var(--text)">Activation course :</strong> quelques minutes dynamiques avant le départ.
+    </div>
+  </div>
+  <div class="race-section">
+    <h3>🏁 Stratégie par discipline</h3>
+    <div class="race-grid">
+      <div class="race-phase">
+        <div class="race-phase-title" style="color:var(--swim)">🏊 Natation</div>
+        <div class="race-phase-content">Départ contrôlé — éviter le sprint inutile. Respiration calme. Ne jamais dépasser le seuil trop tôt.<br><br>Cible : <strong>~2:05/100m réguliers</strong>. Gérer le départ de masse.</div>
+      </div>
+      <div class="race-phase">
+        <div class="race-phase-title" style="color:var(--bike)">🚴 Vélo</div>
+        <div class="race-phase-content">10 premiers km : faciles à contrôlés. Milieu : tempo stable, cadence fluide, alimentation régulière.<br><br>60g glucides/h · 1 bidon/h minimum.<br><strong>Ne pas "gagner" la course à vélo.</strong> Objectif : arriver capable de courir.</div>
+      </div>
+      <div class="race-phase">
+        <div class="race-phase-title" style="color:var(--run)">🏃 CAP</div>
+        <div class="race-phase-content">Retenir l'allure les 1–2 premiers km. Stabiliser proche <strong>5:00–5:15/km</strong>. Respiration profonde après T2.<br><br>Derniers 2 km : accélération progressive si énergie disponible.</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+      <div class="race-phase">
+        <div class="race-phase-title" style="color:var(--brick)">⚡ Transition 1 (T1)</div>
+        <div class="race-phase-content">Calme et efficacité. Ne pas se précipiter. Casque en premier. Transition &lt;2 min.</div>
+      </div>
+      <div class="race-phase">
+        <div class="race-phase-title" style="color:var(--brick)">⚡ Transition 2 (T2)</div>
+        <div class="race-phase-content">Respiration profonde. Commencer la course progressivement. Chaussures posées à l'avance. Transition &lt;2 min.</div>
+      </div>
+    </div>
+  </div>
+  <div class="race-section">
+    <h3>🎒 Checklist matériel</h3>
+    <div class="checklist">
+      <div class="check-group">
+        <div class="check-title" style="color:var(--swim)">Natation</div>
+        <div class="check-item">Combinaison</div>
+        <div class="check-item">Lunettes × 2</div>
+        <div class="check-item">Bonnet</div>
+      </div>
+      <div class="check-group">
+        <div class="check-title" style="color:var(--bike)">Vélo</div>
+        <div class="check-item">Casque</div>
+        <div class="check-item">Lunettes</div>
+        <div class="check-item">Chaussures</div>
+        <div class="check-item">Nutrition + bidons</div>
+        <div class="check-item">Chambre à air</div>
+      </div>
+      <div class="check-group">
+        <div class="check-title" style="color:var(--run)">Course</div>
+        <div class="check-item">Chaussures</div>
+        <div class="check-item">Casquette</div>
+        <div class="check-item">Gels éventuels</div>
+      </div>
+    </div>
+  </div>
+  <div class="race-section">
+    <h3>🚦 Signaux d'alerte — réduire la charge si</h3>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      ${['Douleur tibia augmente','Fatigue persistante','Sommeil dégradé','FC anormalement haute','Perte de motivation'].map(s=>`<div style="background:var(--bg3);border-radius:8px;padding:9px;font-size:12px;color:var(--muted);text-align:center">⚠️ ${s}</div>`).join('')}
+    </div>
+  </div>
+</div>
+
+<!-- JOURNAL -->
+<div id="page-journal" class="page">
+  <div class="journal-header">
+    <h2 style="font-family:'DM Serif Display',serif;font-size:28px">Journal</h2>
+    <div style="font-size:12px;color:var(--muted)" id="total-logged">0 séance(s)</div>
+  </div>
+  <div id="journal-list"></div>
+</div>
+
+<!-- STATS -->
+<div id="page-stats" class="page">
+  <div style="margin-bottom:1.5rem">
+    <h2 style="font-family:'DM Serif Display',serif;font-size:28px;margin-bottom:4px">Progression</h2>
+    <p style="color:var(--muted);font-size:13px">Basé sur tes séances enregistrées</p>
+  </div>
+  <div class="stats-page-grid" id="stats-content"></div>
+  <div id="wellness-chart"></div>
+  <div id="ai-tips"></div>
+</div>
+
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Log séance</h3>
+    <p class="modal-sub" id="modal-sub"></p>
+    <div id="modal-fields"></div>
+    <div class="form-group">
+      <label class="form-label">Ressenti général</label>
+      <div class="rating-group" id="feeling-group">
+        <button class="rating-btn" onclick="setFeeling(1,this)">😴</button>
+        <button class="rating-btn" onclick="setFeeling(2,this)">😐</button>
+        <button class="rating-btn" onclick="setFeeling(3,this)">🙂</button>
+        <button class="rating-btn" onclick="setFeeling(4,this)">💪</button>
+        <button class="rating-btn" onclick="setFeeling(5,this)">🔥</button>
+      </div>
+    </div>
+    <div class="wellness-modal-grid">
+      <div class="form-group" style="margin:0"><label class="form-label">Énergie /10</label><div class="score-selector" id="w-energy"></div></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Sommeil /10</label><div class="score-selector" id="w-sleep"></div></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Douleur tibia /10</label><div class="score-selector" id="w-tibia"></div></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Motivation /10</label><div class="score-selector" id="w-motivation"></div></div>
+    </div>
+    <div class="form-group"><label class="form-label">Fatigue musculaire /10</label><div class="score-selector" id="w-fatigue"></div></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="modal-notes" rows="2" placeholder="Sensations, douleurs, météo…" style="resize:none"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-save" onclick="saveLog()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PLAN — 10 semaines complètes depuis le PDF
+// ============================================================
+const PLAN = [
+{
+  week:1,phase:'base',label:'Adaptation — 100 km vélo dimanche',
+  dates:'26 mai – 1 juin',load:'~8h',loadColor:'var(--swim)',
+  goal:'Intégrer les contraintes réelles de la semaine tout en évitant une surcharge avant le 100 km vélo.',
+  summary:['2 nages','2 vélos','2 CAP','1 renfo léger'],
+  days:[
+    {day:'Lun',type:'run',tag:'CAP + Mobilité',desc:'5 km facile ✓\n+ mobilité 10 min\ntibial raises 2×15\nmollets 2×20',warn:'surveiller tibia'},
+    {day:'Mar',type:'swim',tag:'Nage Technique',desc:'~1900–2200m\n200 crawl + 100 dos\n4×50m éducatifs\n4×200m allure confo (rec 30s)\n8×50m progressifs\n200m retour calme',extra:'1h–1h15'},
+    {day:'Mer',type:'bike',tag:'Vélo Côtes',desc:'1h20–1h40\n20 min facile éch.\n6–8 répét. côtes 3–5 min\nrécup descente complète\n15 min endurance facile',extra:'force spécifique vélo'},
+    {day:'Jeu',type:'run',tag:'CAP Récup Active',desc:'40–45 min très facile\nFC basse\nterrain souple si possible\n+ mobilité 10 min',extra:''},
+    {day:'Ven',type:'swim',tag:'Nage + Renfo léger',desc:'300m éch.\n3×400m allure tri (rec 45s)\n6×50m pull buoy\n200m retour calme\n+ renfo haut du corps + gainage 20–25 min',extra:''},
+    {day:'Sam',type:'rest',tag:'Repos actif',desc:'Fraîcheur avant 100 km\nmobilité · marche légère\nou spinning très facile 20–30 min\nAucune fatigue recherchée',extra:''},
+    {day:'Dim',type:'bike',tag:'🚴 100 km',desc:'Sortie longue 100 km\ndépart très contrôlé\nfacile les 60–70 premiers km\ncadence fluide\n60g glucides/h · 1 bidon/h min',extra:'jambes surélevées après · pas de BRIC'},
+  ]
+},
+{
+  week:2,phase:'base',label:'Reprise progressive après 100 km',
+  dates:'2 – 8 juin',load:'~7h',loadColor:'var(--swim)',
+  goal:'Reprendre une structure progressive sans surcharger la périostite.',
+  summary:['2 nages','2 vélos','3 CAP','Renfo A + B','1 BRIC'],
+  days:[
+    {day:'Lun',type:'run',tag:'CAP + Mobilité',desc:'5 km facile\n+ mobilité 10 min\ntibial raises 2×15 · mollets 2×20',warn:'⚠️ tibia < 3/10'},
+    {day:'Mar',type:'swim',tag:'Nage Technique',desc:'~1900–2200m\n200 crawl + 100 dos\n4×50m éducatifs (rattrapé, 1 bras, bi-lat.)\n4×200m allure confo (rec 30s)\n8×50m progressifs (rec 20s)\n200m retour calme',extra:'1h–1h15'},
+    {day:'Mer',type:'bike',tag:'Vélo Cadence + Renfo A',desc:'1h15\n15 min éch.\n6×3 min haute cadence 95–105 rpm (rec 2 min)\n25 min endurance Z2\n10 min retour calme\n+ Renfo A 30–35 min',extra:'améliorer efficacité pédalage'},
+    {day:'Jeu',type:'run',tag:'CAP Tempo',desc:'50–60 min\n10 min éch. + éducatifs + 3×20s accél.\n3×8 min à 5:25–5:35/km (rec 3 min footing)\n10 min retour calme',warn:'⚠️ stop si tibia >3/10'},
+    {day:'Ven',type:'swim',tag:'Nage + Renfo B',desc:'~2200m\n300m éch.\n3×400m allure tri (rec 45s)\n6×50m pull buoy\n200m retour calme\n+ Renfo B 30–40 min',extra:'1h + renfo'},
+    {day:'Sam',type:'run',tag:'Long run',desc:'1h10 endurance\nallure 6:00–6:20/km · FC <150\n4×20s accélérations légères fin\nmobilité 10 min ensuite',extra:'eau + électrolytes si chaud'},
+    {day:'Dim',type:'brick',tag:'Long vélo + BRIC',desc:'2h endurance Z2\n3×8 min tempo (rec 4 min)\n→ transition rapide\n10–15 min CAP facile\nadaptation musculaire',extra:'1 bidon/h · 40–60g glucides/h'},
+  ]
+},
+{
+  week:3,phase:'base',label:'Vacances — Récupération complète 🏖️',
+  dates:'9 – 15 juin (vacances 12–19)',load:'Repos',loadColor:'var(--muted)',
+  goal:'Récupération physique et mentale. Assimilation de la charge. Aucun entraînement structuré.',
+  vacances:true,
+  banner:'🏖️ Vacances 12–19 juin — Repos complet. Marche, mobilité légère, étirements doux seulement si envie. Cette semaine agit comme une semaine allégée complète.',
+  summary:['Repos complet','Mobilité si envie','Marche légère OK'],
+  days:[
+    {day:'Lun',type:'run',tag:'CAP courte',desc:'30 min Z1 très facile\nmobilité après',extra:'avant les vacances'},
+    {day:'Mar',type:'swim',tag:'Nage',desc:'1500m facile\ntechnique + plaisir',extra:'dernière nage avant vacances'},
+    {day:'Mer',type:'rest',tag:'Repos',desc:'Repos ou marche légère',extra:'départ vacances'},
+    {day:'Jeu',type:'rest',tag:'Repos',desc:'Repos complet\nmarche / mobilité si envie',extra:'🏖️ vacances'},
+    {day:'Ven',type:'rest',tag:'Repos',desc:'Repos complet',extra:'🏖️ vacances'},
+    {day:'Sam',type:'rest',tag:'Repos',desc:'Repos actif\nmobilité légère',extra:'🏖️ vacances'},
+    {day:'Dim',type:'rest',tag:'Repos',desc:'Repos complet',extra:'🏖️ vacances'},
+  ]
+},
+{
+  week:4,phase:'build',label:'Consolidation post-vacances',
+  dates:'16 – 22 juin',load:'~8h',loadColor:'var(--bike)',
+  goal:'Reprise progressive après vacances. Retrouver les sensations sans intensité excessive.',
+  summary:['2 nages','2–3 vélos','3 CAP','2 renfos','1 BRIC court'],
+  days:[
+    {day:'Lun',type:'rest',tag:'Repos',desc:'Repos complet + mobilité\nfoam roll léger · hydratation',extra:''},
+    {day:'Mar',type:'swim',tag:'Nage Seuil',desc:'~2400m\n300m facile · 4×50m éducatifs\n10×100m allure soutenue (rec 20s)\n4×50m rapides\n200m retour calme',extra:'1h10'},
+    {day:'Mer',type:'bike',tag:'Vélo Tempo + Renfo A',desc:'1h30\n15 min éch.\n3×12 min tempo soutenu (rec 5 min)\n6×1 min haute cadence (rec 1 min)\n10 min retour calme\n+ Renfo A 35 min',extra:''},
+    {day:'Jeu',type:'run',tag:'CAP Seuil',desc:'1h\n12 min footing + éducatifs éch.\n4×6 min à 5:05–5:15/km (rec 2min30)\n10 min retour calme',warn:'⚠️ tibia ?'},
+    {day:'Ven',type:'swim',tag:'Nage + Renfo B',desc:'~2400m\n400m facile\n2×600m allure tri (rec 1 min)\n8×50m pull buoy\n200m retour calme\n+ Renfo B 30–40 min',extra:''},
+    {day:'Sam',type:'run',tag:'Long run Progressif',desc:'1h20\n50 min facile\n20 min tempo léger\n10 min retour calme',extra:'eau + électrolytes'},
+    {day:'Dim',type:'brick',tag:'Long vélo + BRIC',desc:'2h30 vélo endurance\n4×10 min tempo inclus\n→ transition rapide\n20 min CAP facile, finir légèrement plus vite',extra:'nutrition vélo obligatoire'},
+  ]
+},
+{
+  week:5,phase:'build',label:'Développement spécifique triathlon',
+  dates:'23 – 29 juin',load:'~9h',loadColor:'var(--bike)',
+  goal:'Apprendre à maintenir l\'effort sous fatigue. Développer la puissance triathlon.',
+  summary:['2 nages','3 vélos','3 CAP','2 renfos','1 BRIC long'],
+  days:[
+    {day:'Lun',type:'rest',tag:'Repos',desc:'Repos complet + mobilité',extra:''},
+    {day:'Mar',type:'swim',tag:'Nage Allure Course',desc:'~2500m\n300m facile · 6×50m éducatifs\n3×500m allure tri (rec 45s)\n200m retour calme',extra:'1h15'},
+    {day:'Mer',type:'bike',tag:'Vélo Seuil + Renfo A',desc:'1h35\n20 min éch.\n5×8 min soutenu (rec 3 min)\n15 min retour calme\n+ Renfo A',extra:''},
+    {day:'Jeu',type:'run',tag:'CAP Tempo Spécifique',desc:'1h\n15 min facile éch.\n3×10 min allure tri cible (rec 3 min)\n10 min retour calme',extra:''},
+    {day:'Ven',type:'swim',tag:'Nage Récup + Renfo B',desc:'~2200m\n300m facile\n12×50m techniques\n8×100m faciles réguliers\n200m retour calme\n+ Renfo B léger',extra:''},
+    {day:'Sam',type:'brick',tag:'BRIC Long Spécifique',desc:'2h15 vélo (30 min tempo inclus)\n→ transition rapide\n35 min CAP progressive\nfinir proche allure course',extra:'nutrition complète testée'},
+    {day:'Dim',type:'bike',tag:'Vélo Récup Endurance',desc:'1h45–2h très facile Z1\nrécupération active',extra:''},
+  ]
+},
+{
+  week:6,phase:'build',label:'Semaine allégée — Absorption',
+  dates:'30 juin – 6 juil',load:'~6h30',loadColor:'var(--muted)',
+  goal:'Absorber la charge des semaines précédentes. Garder les sensations sans intensité.',
+  summary:['2 nages','3 vélos','2 CAP','1 BRIC court'],
+  days:[
+    {day:'Lun',type:'rest',tag:'Repos',desc:'Repos complet',extra:''},
+    {day:'Mar',type:'swim',tag:'Nage Technique',desc:'~2000m\n300m facile · éducatifs\n8×100m confortables\n200m retour calme',extra:''},
+    {day:'Mer',type:'bike',tag:'Vélo Z2 Facile',desc:'1h10 Z2 uniquement\ncadence fluide\n+ mobilité + gainage léger',extra:''},
+    {day:'Jeu',type:'run',tag:'CAP Facile',desc:'45 min allure très facile\nterrain souple si possible',extra:''},
+    {day:'Ven',type:'swim',tag:'Nage Endurance',desc:'1500–1800m continus faciles',extra:''},
+    {day:'Sam',type:'brick',tag:'BRIC Court Facile',desc:'1h vélo facile\n→ 15 min CAP facile',extra:''},
+    {day:'Dim',type:'bike',tag:'Long vélo Allégé',desc:'2h très facile Z1\naucune intensité',extra:''},
+  ]
+},
+{
+  week:7,phase:'build',label:'Gros bloc spécifique — Point culminant',
+  dates:'7 – 13 juil',load:'~9h30–10h',loadColor:'var(--bike)',
+  goal:'Point culminant du plan. Simulation partielle triathlon avec transitions et nutrition.',
+  summary:['2 nages','3 vélos','3 CAP','1 renfo','1 BRIC simulation'],
+  days:[
+    {day:'Lun',type:'rest',tag:'Repos',desc:'Repos complet + mobilité',extra:''},
+    {day:'Mar',type:'swim',tag:'Nage Longue',desc:'~3000m\n400m facile\n3×600m allure tri (rec 45s)\n8×50m rapides\n200m retour calme',extra:'1h20'},
+    {day:'Mer',type:'bike',tag:'Vélo Puissance + Renfo A',desc:'1h45\n20 min éch.\n4×15 min tempo soutenu (rec 5 min)\n10 min retour calme\n+ Renfo A léger',extra:''},
+    {day:'Jeu',type:'run',tag:'CAP Seuil',desc:'1h05\n15 min facile éch.\n5×7 min seuil (rec 2 min)\nretour calme',extra:''},
+    {day:'Ven',type:'swim',tag:'Nage Récup Technique',desc:'2000m facile technique\nmobilité complète',extra:''},
+    {day:'Sam',type:'brick',tag:'🌟 Simulation Partielle',desc:'Nage 1200m continus\n→ T1 transition\n2h30 vélo endurance + tempo\n→ T2 transition\n40 min CAP allure tri',extra:'⭐ séance clé : nutrition + transitions + pacing'},
+    {day:'Dim',type:'run',tag:'CAP Récup',desc:'1h très facile\ntrès contrôlée',extra:''},
+  ]
+},
+{
+  week:8,phase:'peak',label:'Peak spécifique — Confiance et précision',
+  dates:'14 – 20 juil',load:'~8h',loadColor:'var(--run)',
+  goal:'Confiance et précision. Allures de course maîtrisées. Dernier grand bloc avant taper.',
+  summary:['2 nages','3 vélos','3 CAP','1 renfo léger','1 BRIC final'],
+  days:[
+    {day:'Lun',type:'rest',tag:'Repos',desc:'Repos complet',extra:''},
+    {day:'Mar',type:'swim',tag:'Nage Allure Course',desc:'~2000m\n300m facile\n2×750m allure tri (rec 1 min)\n6×50m rapides\n200m retour calme',extra:''},
+    {day:'Mer',type:'bike',tag:'Vélo Spécifique + Renfo',desc:'1h30\n15 min éch.\n3×15 min allure course vélo (rec 5 min)\nretour calme\n+ renfo léger',extra:''},
+    {day:'Jeu',type:'run',tag:'CAP 10 km Spécifique',desc:'55 min\n15 min facile éch.\n25 min allure tri cible\n10 min facile\n4×20s accélérations',extra:''},
+    {day:'Ven',type:'swim',tag:'Nage Récup',desc:'1500–1800m très faciles',extra:''},
+    {day:'Sam',type:'brick',tag:'BRIC Spécifique Final',desc:'1h45 vélo (45 min allure course)\n→ transition rapide\n30 min CAP allure course progressive',extra:'⭐ objectif : confiance'},
+    {day:'Dim',type:'bike',tag:'Vélo Endurance Légère',desc:'1h45 très facile\naucune fatigue recherchée',extra:''},
+  ]
+},
+{
+  week:9,phase:'taper',label:'Début taper — Réduction progressive',
+  dates:'21 – 27 juil',load:'~6h',loadColor:'var(--race)',
+  goal:'Réduire progressivement la fatigue tout en gardant du rythme et de la fluidité.',
+  summary:['2 nages','3 vélos','2 CAP','1 gainage léger','1 BRIC léger'],
+  days:[
+    {day:'Lun',type:'rest',tag:'Repos',desc:'Repos complet + mobilité douce\nhydratation · sommeil prioritaire',extra:''},
+    {day:'Mar',type:'swim',tag:'Nage Rythme Course',desc:'~1800–2000m\n300m facile\n6×100m allure course (rec 20s)\n4×50m rapides contrôlés\n200m retour calme',extra:'55–60 min'},
+    {day:'Mer',type:'bike',tag:'Vélo Intensité Courte',desc:'1h10\n15 min éch.\n5×4 min allure soutenue (rec 3 min)\n10 min retour calme\n+ gainage léger 15–20 min',extra:''},
+    {day:'Jeu',type:'run',tag:'CAP Spécifique Légère',desc:'50 min\n15 min facile\n3×6 min allure tri (rec 2 min)\n10 min retour calme',extra:'garder fluidité sans fatigue'},
+    {day:'Ven',type:'swim',tag:'Nage Récup',desc:'1500m faciles\néducatifs techniques\nrespiration contrôlée',extra:''},
+    {day:'Sam',type:'brick',tag:'BRIC Léger',desc:'1h15 vélo endurance\n2×10 min allure course\n→ 15 min CAP progressive\naucune fatigue',extra:''},
+    {day:'Dim',type:'bike',tag:'Vélo Endurance Facile',desc:'1h30 max très facile',extra:''},
+  ]
+},
+{
+  week:10,phase:'taper',label:'Race Week 🏁',
+  dates:'28 juil – 8 août',load:'~4–5h',loadColor:'var(--race)',
+  goal:'Arriver fraîche, confiante et dynamique. Priorité : sommeil et fraîcheur.',
+  summary:['2 nages','2 vélos','2 CAP','1 BRIC léger'],
+  days:[
+    {day:'Lun',type:'rest',tag:'Repos',desc:'Repos complet\nmobilité légère · hydratation\nsommeil maximal',extra:''},
+    {day:'Mar',type:'swim',tag:'Nage Activation',desc:'40–45 min\n200m facile\n6×50m allure course (rec complète)\n200m retour calme',extra:'sensations uniquement'},
+    {day:'Mer',type:'bike',tag:'Vélo Activation',desc:'50–60 min\n15 min facile\n3×3 min allure course (rec 3 min)\nretour calme\n+ mobilité courte',extra:''},
+    {day:'Jeu',type:'run',tag:'CAP + Rappels Allure',desc:'35–40 min\n15 min facile\n3×3 min allure tri (rec 2 min)\nretour calme',extra:'rester dynamique'},
+    {day:'Ven',type:'rest',tag:'Repos Complet',desc:'Préparer matériel\nnutrition · hydratation\ncheck vélo\nPas d\'entraînement',extra:''},
+    {day:'Sam',type:'brick',tag:'Activation Pré-course',desc:'Optionnelle — 20–30 min max\n10 min vélo facile\n5 min CAP facile\nquelques accélérations courtes\nCoucher tôt',extra:'J-1 · délier les jambes'},
+    {day:'Dim',type:'race',tag:'🏁 RACE DAY',desc:'TRIATHLON M VERDUN\n8 août 2026\nSUB 3H 🔥',extra:'tu l\'as préparé !'},
+  ]
+},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let logs = JSON.parse(localStorage.getItem('tri-verdun-v2') || '[]');
+let currentModal = null, currentFeeling = 3;
+let wellnessScores = {energy:5,sleep:7,tibia:1,motivation:8,fatigue:4};
+const feelingEmoji = ['','😴','😐','🙂','💪','🔥'];
+
+function saveStorage(){ localStorage.setItem('tri-verdun-v2',JSON.stringify(logs)); }
+function getRaceDate(){ return new Date('2026-08-08'); }
+function getToday(){ return new Date(); }
+function getWeekStart(wi){ const d=new Date('2026-05-26'); d.setDate(d.getDate()+wi*7); return d; }
+function isWeekCurrent(wi){ const s=getWeekStart(wi),e=new Date(s); e.setDate(e.getDate()+6); const t=getToday(); return t>=s&&t<=e; }
+function isWeekPast(wi){ const e=new Date(getWeekStart(wi)); e.setDate(e.getDate()+6); return getToday()>e; }
+function getTagClass(t){ return ({swim:'tag-swim',bike:'tag-bike',run:'tag-run',brick:'tag-brick',renfo:'tag-renfo',rest:'tag-rest',race:'tag-race'})[t]||'tag-rest'; }
+function getColor(t){ return ({swim:'var(--swim)',bike:'var(--bike)',run:'var(--run)',brick:'var(--brick)',renfo:'var(--renfo)',rest:'var(--rest)',race:'var(--race)'})[t]||'var(--rest)'; }
+function getLogKey(wi,di){ return `w${wi}-d${di}`; }
+function getLog(wi,di){ return logs.find(l=>l.key===getLogKey(wi,di)); }
+
+function updateCountdown(){
+  const diff=getRaceDate()-getToday();
+  if(diff<0){document.getElementById('countdown').textContent='🏁 Race day !';return;}
+  document.getElementById('countdown').textContent=`J-${Math.ceil(diff/86400000)} Verdun`;
+}
+
+// ============================================================
+// RENDER PLAN
+// ============================================================
+function renderPlan(){
+  const container=document.getElementById('timeline');
+  let lastPhase=null,html='';
+  const phaseLabels={base:'Phase 1 — Base (S1–3)',build:'Phase 2 — Développement (S4–7)',peak:'Phase 3 — Spécifique (S8)',taper:'Phase 4 — Taper & Race (S9–10)'};
+  PLAN.forEach((week,wi)=>{
+    if(week.phase!==lastPhase){
+      html+=`<div class="phase-divider"><div class="phase-line"></div><div class="phase-pill phase-${week.phase}">${phaseLabels[week.phase]}</div><div class="phase-line"></div></div>`;
+      lastPhase=week.phase;
+    }
+    const isCurr=isWeekCurrent(wi),isPast=isWeekPast(wi);
+    const loggedCount=week.days.filter((d,di)=>getLog(wi,di)&&d.type!=='rest').length;
+    const totalSess=week.days.filter(d=>d.type!=='rest'&&d.type!=='race').length;
+    const progress=totalSess?Math.round(loggedCount/totalSess*100):0;
+    let badge=isPast?`<span class="badge-complete">✓ ${loggedCount}/${totalSess}</span>`:isCurr?`<span class="badge-current">← en cours</span>`:week.vacances?`<span class="badge-vacances">🏖️ vacances</span>`:`<span class="badge-upcoming">à venir</span>`;
+    html+=`<div class="week-card${isCurr?' current':''}${isPast?' completed':''}" id="week-${wi}">
+      <div class="week-header" onclick="toggleWeek(${wi})">
+        <div class="week-title-group">
+          <span class="week-num">S${week.week}</span>
+          <span class="week-title">${week.label}</span>
+          <span class="week-dates">${week.dates}</span>
+          ${badge}
+        </div>
+        <div class="week-right">
+          <span class="week-load" style="color:${week.loadColor}">● ${week.load}</span>
+          <div class="week-progress-bar"><div class="week-progress-fill" style="width:${progress}%"></div></div>
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="week-body">
+        ${week.banner?`<div class="vacances-banner">${week.banner}</div>`:''}
+        <div class="week-goal"><strong>Objectif :</strong> ${week.goal}</div>
+        ${week.summary?`<div class="week-summary">${week.summary.map(s=>`<span>${s}</span>`).join('')}</div>`:''}
+        <div class="days-grid">
+          ${week.days.map((d,di)=>{
+            const log=getLog(wi,di);
+            const isRest=d.type==='rest';
+            return `<div class="day-cell${isRest?' rest-day':''}${log?' logged':''}" id="cell-${wi}-${di}">
+              ${log?'<span class="done-check">✓</span>':''}
+              <div class="day-name">${d.day}</div>
+              <span class="session-tag ${getTagClass(d.type)}">${d.tag}</span>
+              <div class="day-desc">${d.desc.replace(/\n/g,'<br>')}</div>
+              ${d.extra?`<div class="day-extra">${d.extra}</div>`:''}
+              ${d.warn?`<div class="day-warn">${d.warn}</div>`:''}
+              ${!isRest&&d.type!=='race'?`<button class="log-btn" onclick="openModal(${wi},${di},event)">${log?'✏️':'+ Log'}</button>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  });
+  container.innerHTML=html;
+  PLAN.forEach((_,wi)=>{ if(isWeekCurrent(wi)) toggleWeek(wi); });
+}
+
+function toggleWeek(wi){ document.getElementById('week-'+wi).classList.toggle('open'); }
+
+// ============================================================
+// MODAL
+// ============================================================
+function buildScoreSelector(id,current){
+  let h='';
+  for(let i=1;i<=10;i++) h+=`<button class="score-btn${current===i?' selected':''}" onclick="setWellness('${id}',${i},this)">${i}</button>`;
+  return h;
+}
+function openModal(wi,di,e){
+  e.stopPropagation();
+  const week=PLAN[wi],day=week.days[di],ex=getLog(wi,di);
+  currentModal={wi,di};
+  currentFeeling=ex?ex.feeling:3;
+  wellnessScores=ex?{...ex.wellness}:{energy:5,sleep:7,tibia:1,motivation:8,fatigue:4};
+  document.getElementById('modal-title').textContent=`${day.tag} — ${day.day} · S${week.week}`;
+  document.getElementById('modal-sub').textContent=`${week.dates} · ${week.label}`;
+  document.getElementById('modal-notes').value=ex?(ex.notes||''):'';
+  document.querySelectorAll('.rating-btn').forEach((b,i)=>b.classList.toggle('selected',i+1===currentFeeling));
+  ['energy','sleep','tibia','motivation','fatigue'].forEach(k=>{ const el=document.getElementById('w-'+k); if(el) el.innerHTML=buildScoreSelector(k,wellnessScores[k]); });
+  const d=ex||{};
+  let fields='';
+  if(day.type==='swim') fields=`<div class="form-row"><div class="form-group"><label class="form-label">Distance (m)</label><input class="form-input" id="f-dist" type="number" placeholder="2000" value="${d.dist||''}"></div><div class="form-group"><label class="form-label">Durée (min)</label><input class="form-input" id="f-dur" type="number" placeholder="55" value="${d.dur||''}"></div></div><div class="form-group"><label class="form-label">Allure moy (mm:ss/100m)</label><input class="form-input" id="f-pace" type="text" placeholder="2:05" value="${d.pace||''}"></div>`;
+  else if(day.type==='bike') fields=`<div class="form-row"><div class="form-group"><label class="form-label">Distance (km)</label><input class="form-input" id="f-dist" type="number" placeholder="60" value="${d.dist||''}"></div><div class="form-group"><label class="form-label">Durée (min)</label><input class="form-input" id="f-dur" type="number" placeholder="90" value="${d.dur||''}"></div></div><div class="form-group"><label class="form-label">Vitesse moy (km/h)</label><input class="form-input" id="f-speed" type="number" step="0.1" placeholder="28" value="${d.speed||''}"></div>`;
+  else if(day.type==='run') fields=`<div class="form-row"><div class="form-group"><label class="form-label">Distance (km)</label><input class="form-input" id="f-dist" type="number" step="0.1" placeholder="8" value="${d.dist||''}"></div><div class="form-group"><label class="form-label">Durée (min)</label><input class="form-input" id="f-dur" type="number" placeholder="50" value="${d.dur||''}"></div></div><div class="form-group"><label class="form-label">Allure moy (mm:ss/km)</label><input class="form-input" id="f-pace" type="text" placeholder="5:30" value="${d.pace||''}"></div><div class="form-group"><label class="form-label">Douleur tibia (0 = aucune)</label><input class="form-input" id="f-tibia" type="number" min="0" max="10" placeholder="0" value="${d.tibia||''}"></div>`;
+  else if(day.type==='brick') fields=`<div class="form-row"><div class="form-group"><label class="form-label">Vélo (km)</label><input class="form-input" id="f-bike-dist" type="number" placeholder="40" value="${d.bikeDist||''}"></div><div class="form-group"><label class="form-label">Vélo (min)</label><input class="form-input" id="f-bike-dur" type="number" placeholder="90" value="${d.bikeDur||''}"></div></div><div class="form-row"><div class="form-group"><label class="form-label">CAP (km)</label><input class="form-input" id="f-run-dist" type="number" step="0.1" placeholder="5" value="${d.runDist||''}"></div><div class="form-group"><label class="form-label">Allure CAP (mm:ss/km)</label><input class="form-input" id="f-pace" type="text" placeholder="5:15" value="${d.pace||''}"></div></div>`;
+  else if(day.type==='renfo') fields=`<div class="form-group"><label class="form-label">Type</label><select class="form-input" id="f-renfo-type"><option value="A" ${d.renfoType==='A'?'selected':''}>Renfo A — Prévention</option><option value="B" ${d.renfoType==='B'?'selected':''}>Renfo B — Performance</option></select></div><div class="form-group"><label class="form-label">Durée (min)</label><input class="form-input" id="f-dur" type="number" placeholder="35" value="${d.dur||''}"></div>`;
+  document.getElementById('modal-fields').innerHTML=fields;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('open'); currentModal=null; }
+function setFeeling(val,btn){ currentFeeling=val; document.querySelectorAll('.rating-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); }
+function setWellness(key,val,btn){ wellnessScores[key]=val; document.getElementById('w-'+key).querySelectorAll('.score-btn').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); }
+function saveLog(){
+  if(!currentModal) return;
+  const{wi,di}=currentModal,day=PLAN[wi].days[di];
+  const gv=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  const entry={key:getLogKey(wi,di),wi,di,type:day.type,tag:day.tag,weekLabel:PLAN[wi].label,dayLabel:day.day,feeling:currentFeeling,wellness:{...wellnessScores},notes:document.getElementById('modal-notes').value,date:new Date().toLocaleDateString('fr-CA')};
+  if(day.type==='swim'){entry.dist=parseFloat(gv('f-dist'))||null;entry.dur=parseFloat(gv('f-dur'))||null;entry.pace=gv('f-pace')||null;}
+  else if(day.type==='bike'){entry.dist=parseFloat(gv('f-dist'))||null;entry.dur=parseFloat(gv('f-dur'))||null;entry.speed=parseFloat(gv('f-speed'))||null;}
+  else if(day.type==='run'){entry.dist=parseFloat(gv('f-dist'))||null;entry.dur=parseFloat(gv('f-dur'))||null;entry.pace=gv('f-pace')||null;entry.tibia=parseFloat(gv('f-tibia'))||0;}
+  else if(day.type==='brick'){entry.bikeDist=parseFloat(gv('f-bike-dist'))||null;entry.bikeDur=parseFloat(gv('f-bike-dur'))||null;entry.runDist=parseFloat(gv('f-run-dist'))||null;entry.pace=gv('f-pace')||null;}
+  else if(day.type==='renfo'){entry.renfoType=gv('f-renfo-type')||'A';entry.dur=parseFloat(gv('f-dur'))||null;}
+  logs=logs.filter(l=>l.key!==entry.key);
+  logs.push(entry);
+  logs.sort((a,b)=>a.key.localeCompare(b.key));
+  saveStorage();
+  closeModal();renderPlan();renderJournal();renderStats();
+}
+
+// ============================================================
+// JOURNAL
+// ============================================================
+function renderJournal(){
+  const container=document.getElementById('journal-list');
+  document.getElementById('total-logged').textContent=`${logs.length} séance(s) enregistrée(s)`;
+  if(!logs.length){container.innerHTML=`<div class="empty-state"><div class="big">📋</div><p>Aucune séance logguée.<br>Lance-toi !</p></div>`;return;}
+  container.innerHTML=[...logs].reverse().map(l=>{
+    let det='';
+    if(l.type==='swim') det=[l.dist?l.dist+'m':null,l.dur?l.dur+' min':null,l.pace?l.pace+'/100m':null].filter(Boolean).join(' · ');
+    else if(l.type==='bike') det=[l.dist?l.dist+' km':null,l.dur?l.dur+' min':null,l.speed?l.speed+' km/h':null].filter(Boolean).join(' · ');
+    else if(l.type==='run') det=[l.dist?l.dist+' km':null,l.dur?l.dur+' min':null,l.pace?l.pace+'/km':null,l.tibia>0?`tibia ${l.tibia}/10`:null].filter(Boolean).join(' · ');
+    else if(l.type==='brick') det=[l.bikeDist?l.bikeDist+' km vélo':null,l.runDist?l.runDist+' km CAP':null,l.pace?l.pace+'/km':null].filter(Boolean).join(' · ');
+    const w=l.wellness||{};
+    const wBadges=['energy','sleep','tibia','motivation','fatigue'].filter(k=>w[k]).map(k=>{
+      const lbl={energy:'énergie',sleep:'sommeil',tibia:'tibia',motivation:'motiv.',fatigue:'fatigue'};
+      const col=k==='tibia'&&w[k]>3?'color:#ef4444':k==='tibia'&&w[k]>1?'color:var(--race)':'';
+      return `<span class="wellness-badge" style="${col}">${lbl[k]} ${w[k]}/10</span>`;
+    }).join('');
+    return `<div class="log-entry"><div class="entry-dot" style="background:${getColor(l.type)};margin-top:3px"></div><div><div class="entry-top"><span class="session-tag ${getTagClass(l.type)}" style="margin-right:6px">${l.tag}</span>${l.dayLabel} · S${PLAN[l.wi]?.week||l.wi+1}</div><div class="entry-meta">${l.date} · ${l.weekLabel}${det?' · '+det:''}</div>${wBadges?`<div class="wellness-badges">${wBadges}</div>`:''}${l.notes?`<div style="font-size:12px;color:var(--muted);margin-top:5px;font-style:italic">"${l.notes}"</div>`:''}</div><div class="entry-stats"><div class="entry-feeling">${feelingEmoji[l.feeling]||'🙂'}</div></div></div>`;
+  }).join('');
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats(){
+  const container=document.getElementById('stats-content'),tipsC=document.getElementById('ai-tips'),wellC=document.getElementById('wellness-chart');
+  if(!logs.length){container.innerHTML=`<div class="chart-card full"><div class="empty-state"><div class="big">📊</div><p>Log tes premières séances.</p></div></div>`;tipsC.innerHTML='';wellC.innerHTML='';return;}
+  const counts={swim:0,bike:0,run:0,brick:0,renfo:0},durs={swim:0,bike:0,run:0,brick:0,renfo:0};
+  const feelings=[],tibias=[];
+  logs.forEach(l=>{
+    if(counts[l.type]!==undefined){counts[l.type]++;if(l.dur)durs[l.type]+=l.dur;}
+    if(l.feeling) feelings.push(l.feeling);
+    if(l.type==='run'&&l.tibia) tibias.push(l.tibia);
+    if(l.wellness?.tibia) tibias.push(l.wellness.tibia);
+  });
+  const avgF=feelings.length?(feelings.reduce((a,b)=>a+b,0)/feelings.length).toFixed(1):'—';
+  const avgT=tibias.length?(tibias.reduce((a,b)=>a+b,0)/tibias.length).toFixed(1):'—';
+  const totalMin=Object.values(durs).reduce((a,b)=>a+b,0);
+  const byWeek=Array(10).fill(0);
+  logs.forEach(l=>{if(l.wi<10)byWeek[l.wi]++;});
+  const maxBar=Math.max(...byWeek,1);
+  const weeksDone=new Set(logs.map(l=>l.wi)).size;
+  const runLogs=logs.filter(l=>l.type==='run'&&l.dur&&l.dist);
+  let paceHtml='';
+  if(runLogs.length>=2){
+    const first=runLogs[0].dur/runLogs[0].dist,last=runLogs[runLogs.length-1].dur/runLogs[runLogs.length-1].dist;
+    const d=Math.round((first-last)*60);
+    paceHtml=`<div style="background:var(--bg3);border-radius:8px;padding:10px;grid-column:span 2;font-size:12px;color:${d>0?'var(--bike)':'var(--run)'}">CAP : allure ${d>0?'améliorée de '+d+' sec/km ↑':'inchangée ou plus lente de '+Math.abs(d)+' sec/km'} entre S${PLAN[runLogs[0].wi]?.week||1} et S${PLAN[runLogs[runLogs.length-1].wi]?.week||runLogs.length}</div>`;
+  }
+  container.innerHTML=`
+  <div class="chart-card"><div class="chart-title">Séances par discipline</div>
+    ${[['swim','Nage',counts.swim],['bike','Vélo',counts.bike],['run','CAP',counts.run],['brick','Briques',counts.brick],['renfo','Renfo',counts.renfo]].map(([t,l,c])=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="width:50px;font-size:12px;color:var(--muted)">${l}</span>
+      <div style="flex:1;height:7px;background:var(--bg3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${Math.round(c/Math.max(...Object.values(counts),1)*100)}%;background:${getColor(t)};border-radius:99px;transition:width .5s"></div></div>
+      <span style="width:18px;font-family:'DM Mono',monospace;font-size:12px;color:${getColor(t)}">${c}</span>
+    </div>`).join('')}
+  </div>
+  <div class="chart-card"><div class="chart-title">Chiffres clés</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Séances</div><div style="font-family:'DM Mono',monospace;font-size:20px">${logs.length}</div></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Volume</div><div style="font-family:'DM Mono',monospace;font-size:20px">${Math.floor(totalMin/60)}h${String(totalMin%60).padStart(2,'0')}</div></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Ressenti</div><div style="font-size:20px">${avgF!=='—'?feelingEmoji[Math.round(parseFloat(avgF))]:'—'} <span style="font-family:'DM Mono',monospace;font-size:12px">${avgF}</span></div></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:9px"><div style="font-size:10px;color:var(--muted2);margin-bottom:3px">Tibia moy.</div><div style="font-family:'DM Mono',monospace;font-size:20px;color:${parseFloat(avgT)>3?'var(--race)':parseFloat(avgT)>1?'#fdba74':'var(--bike)'}">${avgT}/10</div></div>
+      ${paceHtml}
+    </div>
+  </div>
+  <div class="chart-card full"><div class="chart-title">Séances par semaine</div>
+    <div class="bar-chart">${byWeek.map((n,i)=>`<div class="bar-group"><div class="bar" style="height:${Math.round(n/maxBar*100)}px;background:${isWeekCurrent(i)?'var(--race)':isWeekPast(i)?'var(--muted2)':'var(--swim)'};opacity:${isWeekPast(i)?0.55:1}"></div><div class="bar-label">S${i+1}</div></div>`).join('')}
+    </div>
+  </div>`;
+  // Wellness
+  const last5=logs.slice(-5);
+  if(last5.some(l=>l.wellness)){
+    const keys=['energy','sleep','tibia','motivation','fatigue'],lbl={energy:'Énergie',sleep:'Sommeil',tibia:'Tibia',motivation:'Motiv.',fatigue:'Fatigue'},col={energy:'var(--swim)',sleep:'var(--bike)',tibia:'#ef4444',motivation:'var(--race)',fatigue:'var(--run)'};
+    const avgs={};
+    keys.forEach(k=>{const v=last5.filter(l=>l.wellness?.[k]).map(l=>l.wellness[k]);avgs[k]=v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):'-';});
+    wellC.innerHTML=`<div class="chart-card" style="margin-bottom:14px"><div class="chart-title">Wellness — 5 dernières séances</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">${keys.map(k=>`<div style="background:var(--bg3);border-radius:8px;padding:9px;text-align:center"><div style="font-size:10px;color:var(--muted2);margin-bottom:5px">${lbl[k]}</div><div style="font-family:'DM Mono',monospace;font-size:20px;color:${col[k]}">${avgs[k]}</div><div style="font-size:10px;color:var(--muted2)">/10</div></div>`).join('')}</div></div>`;
+  } else wellC.innerHTML='';
+  // Tips
+  let tips='';
+  const bikeTotal=counts.bike+counts.brick;
+  if(bikeTotal<weeksDone&&weeksDone>=3) tips+=`<div class="tip-card"><div class="tip-title-row"><span>🚴</span><strong>Vélo : priorité du plan</strong></div><div class="tip-body">Le vélo est ton point à améliorer. Vise 2–3 séances vélo/semaine : sortie longue dimanche + seuil en semaine + BRIC.</div></div>`;
+  const avgTn=parseFloat(avgT);
+  if(!isNaN(avgTn)&&avgTn>2) tips+=`<div class="tip-card"><div class="tip-title-row"><span>⚠️</span><strong style="color:var(--race)">Périostite : surveille le tibia</strong></div><div class="tip-body">Score tibia moyen : ${avgT}/10. Si >3/10 pendant la CAP → réduire immédiatement. Priorise tibial raises + mollets dans Renfo A.</div></div>`;
+  if(feelings.length>=3&&feelings.slice(-3).reduce((a,b)=>a+b,0)/3<2.5) tips+=`<div class="tip-card"><div class="tip-title-row"><span>😴</span><strong style="color:var(--race)">Fatigue accumulée</strong></div><div class="tip-body">Tes 3 derniers ressentis sont faibles. Ajoute 1–2 jours de repos. L'adaptation se fait pendant la récupération, pas pendant l'effort.</div></div>`;
+  if(counts.brick===0&&weeksDone>=4) tips+=`<div class="tip-card"><div class="tip-title-row"><span>🧱</span><strong style="color:var(--brick)">Fais ta première brique !</strong></div><div class="tip-body">Aucune brique logguée. C'est la séance la plus spécifique du triathlon — vélo puis CAP immédiatement pour apprivoiser les jambes lourdes.</div></div>`;
+  if(!tips) tips=`<div class="tip-card"><div class="tip-title-row"><span>✅</span><strong style="color:var(--bike)">Continue à logger tes séances</strong></div><div class="tip-body">Plus de données = conseils plus précis. Entre tes allures, distances et scores wellness pour un suivi optimal.</div></div>`;
+  tipsC.innerHTML=`<h3 style="font-family:'DM Serif Display',serif;font-size:22px;margin:1.5rem 0 1rem">Conseils personnalisés</h3>${tips}`;
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+updateCountdown();
+setInterval(updateCountdown,60000);
+renderPlan();renderJournal();renderStats();
+</script>
+</body>
+</html>
