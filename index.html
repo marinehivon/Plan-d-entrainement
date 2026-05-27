@@ -572,39 +572,48 @@ function updateCountdown(){
 }
 
 // ============================================================
-// DRAG & DROP — déplacer les jours (colonnes entières)
+// DRAG & DROP — chaque session-cell draggable individuellement
+// Glisse une seance sport vers un autre jour (echange si=0 sport)
+// Glisse une seance renfo vers un autre renfo (echange si=1)
 // ============================================================
 let dragSrc = null;
 function initDragDrop(wi){
-  const cols = document.querySelectorAll(`[data-wi="${wi}"]`);
-  cols.forEach(col=>{
-    col.setAttribute('draggable','true');
-    col.addEventListener('dragstart',e=>{
-      dragSrc={wi,di:parseInt(col.dataset.di)};
-      col.classList.add('dragging');
+  const cells = document.querySelectorAll(`.session-cell[data-wi="${wi}"]`);
+  cells.forEach(cell=>{
+    const di=parseInt(cell.dataset.di), si=parseInt(cell.dataset.si);
+    const days=getWeekDays(wi);
+    const sType=days[di]?.sessions[si]?.type;
+    if(sType==='rest'||sType==='race') return;
+    cell.setAttribute('draggable','true');
+    cell.addEventListener('dragstart',e=>{
+      dragSrc={wi,di,si};
+      cell.classList.add('dragging');
       e.dataTransfer.effectAllowed='move';
+      e.stopPropagation();
     });
-    col.addEventListener('dragend',()=>{
-      col.classList.remove('dragging');
-      document.querySelectorAll('.day-col').forEach(c=>c.classList.remove('drag-over'));
+    cell.addEventListener('dragend',()=>{
+      cell.classList.remove('dragging');
+      document.querySelectorAll('.session-cell').forEach(c=>c.classList.remove('drag-over'));
     });
-    col.addEventListener('dragover',e=>{
-      e.preventDefault();
-      document.querySelectorAll('.day-col').forEach(c=>c.classList.remove('drag-over'));
-      col.classList.add('drag-over');
-    });
-    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
-    col.addEventListener('drop',e=>{
-      e.preventDefault();
-      col.classList.remove('drag-over');
+    cell.addEventListener('dragover',e=>{
+      e.preventDefault(); e.stopPropagation();
       if(!dragSrc) return;
-      const destDi=parseInt(col.dataset.di);
-      if(dragSrc.di===destDi) return;
-      const days=getWeekDays(wi).map(d=>({...d,sessions:[...d.sessions]}));
+      document.querySelectorAll('.session-cell').forEach(c=>c.classList.remove('drag-over'));
+      cell.classList.add('drag-over');
+    });
+    cell.addEventListener('dragleave',()=>cell.classList.remove('drag-over'));
+    cell.addEventListener('drop',e=>{
+      e.preventDefault(); e.stopPropagation();
+      cell.classList.remove('drag-over');
+      if(!dragSrc) return;
+      const destDi=parseInt(cell.dataset.di), destSi=parseInt(cell.dataset.si);
+      if(dragSrc.di===destDi&&dragSrc.si===destSi){ dragSrc=null; return; }
+      const days=getWeekDays(wi).map(d=>({...d,sessions:d.sessions.map(s=>({...s}))}));
       const dayNames=PLAN[wi].days.map(d=>d.day);
-      const tmpSessions=days[dragSrc.di].sessions;
-      days[dragSrc.di].sessions=days[destDi].sessions;
-      days[destDi].sessions=tmpSessions;
+      // Echange uniquement les 2 sessions concernees
+      const tmp=days[dragSrc.di].sessions[dragSrc.si];
+      days[dragSrc.di].sessions[dragSrc.si]=days[destDi].sessions[destSi];
+      days[destDi].sessions[destSi]=tmp;
       days.forEach((d,i)=>d.day=dayNames[i]);
       weekOverrides[wi]=days;
       saveOverrides();
@@ -657,7 +666,7 @@ function renderPlan(){
         <div class="week-goal"><strong>Objectif :</strong> ${week.goal}</div>
         ${week.summary?`<div class="week-summary">${week.summary.map(s=>`<span>${s}</span>`).join('')}</div>`:''}
         <div class="week-edit-hint">
-          ⠿ Glisse un jour pour déplacer ses séances
+          ⠿ Glisse une séance vers un autre jour pour la déplacer (sport avec sport, renfo avec renfo)
           ${isModified?`<button onclick="resetWeek(${wi},event)" style="background:none;border:1px solid var(--border);border-radius:99px;color:var(--muted2);font-size:10px;padding:2px 8px;cursor:pointer;font-family:'Outfit',sans-serif">↩ Réinitialiser</button>`:''}
         </div>
         <div class="days-grid">
@@ -672,8 +681,8 @@ function renderPlan(){
                 const isRenfo=s.type==='renfo';
                 const zoneBadges=log&&log.bodyZones?log.bodyZones.map(z=>`<span style="font-size:9px;padding:1px 5px;border-radius:99px;background:${ZONE_COLORS[z]}22;color:${ZONE_COLORS[z]};display:inline-block;margin:1px">${ZONE_LABELS[z]}</span>`).join(''):'';
                 return `${isRenfo&&si>0?`<div class="renfo-separator">renfo</div>`:''}
-                <div class="session-cell${isRest?' rest-cell':''}${log?' logged-cell':''}${isRenfo?' renfo-cell':''}">
-                  ${!isRest&&di===0?`<span class="drag-handle" title="Glisser ce jour">⠿</span>`:''}
+                <div class="session-cell${isRest?' rest-cell':''}${log?' logged-cell':''}${isRenfo?' renfo-cell':''}" data-wi="${wi}" data-di="${di}" data-si="${si}">
+                  ${!isRest?`<span class="drag-handle" title="Glisser cette séance">⠿</span>`:''}
                   ${log&&!isRest?'<span class="done-check">✓</span>':''}
                   <span class="session-tag ${getTagClass(s.type)}">${s.tag}</span>
                   <div class="session-desc">${s.desc.replace(/\n/g,'<br>')}</div>
