@@ -575,9 +575,29 @@ const GS_HEADERS_PLANNING = [
   'Date modification','Semaine','Jour','Session index','Type','Tag','Description'
 ];
 
+// Envoi via iframe caché — contourne les restrictions CORS de Google Apps Script
+function sendToSheets(payload, onSuccess) {
+  try {
+    const params = new URLSearchParams();
+    params.append('payload', JSON.stringify(payload));
+    const fullUrl = GS_URL + '?' + params.toString();
+
+    // Utilise une balise script dynamique (JSONP-style) pour GET
+    // Google Apps Script supporte les requêtes GET avec doGet
+    const script = document.createElement('script');
+    script.src = fullUrl + '&callback=gsCallback_' + Date.now();
+    document.head.appendChild(script);
+    setTimeout(()=>{ 
+      try{ document.head.removeChild(script); }catch(e){}
+      if(onSuccess) onSuccess();
+    }, 2000);
+  } catch(err) {
+    console.warn('Sheets send error:', err);
+  }
+}
+
 async function syncToSheets(entry) {
   try {
-    // Ligne séance
     let distStr = '';
     if(entry.type==='swim') distStr = entry.dist ? entry.dist+'m' : '';
     else if(entry.type==='bike') distStr = entry.dist ? entry.dist+' km' : '';
@@ -589,33 +609,33 @@ async function syncToSheets(entry) {
     else if(entry.speed) paceStr = entry.speed+' km/h';
 
     const w = entry.wellness || {};
-    const row = [
-      entry.date,
-      'S'+(PLAN[entry.wi]?.week||entry.wi+1),
-      entry.dayLabel,
-      entry.type,
-      entry.tag,
-      entry.missed ? 'Oui' : 'Non',
-      entry.dur || '',
-      distStr,
-      paceStr,
-      entry.tibia || 0,
-      entry.missed ? 'Non réalisée' : (feelingEmoji[entry.feeling]||''),
-      w.energy||'', w.sleep||'', w.tibia||0, w.motivation||'', w.fatigue||'',
-      entry.bodyZones ? entry.bodyZones.map(z=>ZONE_LABELS[z]).join(', ') : '',
-      entry.notes || ''
-    ];
-
-    await fetch(GS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({tab:'Séances', headers:GS_HEADERS_SEANCES, row})
+    const params = new URLSearchParams({
+      tab:       'Séances',
+      date:      entry.date || '',
+      semaine:   'S'+(PLAN[entry.wi]?.week||entry.wi+1),
+      jour:      entry.dayLabel || '',
+      type:      entry.type || '',
+      tag:       entry.tag || '',
+      manquee:   entry.missed ? 'Oui' : 'Non',
+      duree:     entry.dur || '',
+      distance:  distStr,
+      allure:    paceStr,
+      tibia:     entry.tibia || 0,
+      ressenti:  entry.missed ? 'Non réalisée' : (feelingEmoji[entry.feeling]||''),
+      energie:   w.energy || '',
+      sommeil:   w.sleep || '',
+      tibiaW:    w.tibia || 0,
+      motivation:w.motivation || '',
+      fatigue:   w.fatigue || '',
+      zones:     entry.bodyZones ? entry.bodyZones.map(z=>ZONE_LABELS[z]).join(', ') : '',
+      notes:     entry.notes || ''
     });
+
+    await fetch(GS_URL + '?' + params.toString(), { mode: 'no-cors' });
     showSyncStatus('✓ Sauvegardé dans Google Sheets', 'success');
   } catch(err) {
     console.warn('Google Sheets sync failed:', err);
-    showSyncStatus('⚠️ Sync Google Sheets échouée', 'error');
+    showSyncStatus('⚠️ Sync Google Sheets échouée — données sauvées en local', 'error');
   }
 }
 
@@ -627,21 +647,17 @@ async function syncPlanningToSheets(wi) {
       const d = days[di];
       for(let si=0; si<d.sessions.length; si++){
         const s = d.sessions[si];
-        const row = [
-          new Date().toLocaleDateString('fr-CA'),
-          'S'+(PLAN[wi].week),
-          dayNames[di],
-          si,
-          s.type,
-          s.tag,
-          s.desc.replace(/\n/g,' ')
-        ];
-        await fetch(GS_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({tab:'Planning modifié', headers:GS_HEADERS_PLANNING, row})
+        const params = new URLSearchParams({
+          tab:     'Planning',
+          date:    new Date().toLocaleDateString('fr-CA'),
+          semaine: 'S'+(PLAN[wi].week),
+          jour:    dayNames[di],
+          si:      si,
+          type:    s.type,
+          tag:     s.tag,
+          desc:    s.desc ? s.desc.replace(/\n/g,' ') : ''
         });
+        await fetch(GS_URL + '?' + params.toString(), { mode: 'no-cors' });
       }
     }
   } catch(err) {
