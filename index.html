@@ -64,7 +64,7 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 
 /* GRILLE JOURS */
 .days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;}
-.day-col{display:flex;flex-direction:column;gap:5px;}
+.day-col{display:flex;flex-direction:column;gap:5px;border-radius:10px;transition:background .15s;}.day-col.drag-over{background:rgba(225,29,72,.06);outline:2px dashed rgba(225,29,72,.4);outline-offset:-2px;}
 .day-name-header{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted2);margin-bottom:2px;padding-left:2px;}
 
 /* CELLULE SÉANCE */
@@ -78,8 +78,7 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
 
 /* SÉANCE RENFO DANS LE MÊME JOUR — séparation visuelle */
 .session-cell.renfo-cell{border-left:3px solid var(--renfo);background:rgba(244,114,182,.04);}
-.renfo-separator{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--renfo);margin:0;padding:2px 0;}
-.renfo-separator::before,.renfo-separator::after{content:'';flex:1;height:1px;background:rgba(244,114,182,.2);}
+
 
 .session-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;margin-bottom:4px;}
 .tag-swim{background:rgba(125,211,252,.15);color:var(--swim);}
@@ -322,6 +321,15 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
   <div class="modal">
     <h3 id="modal-title">Log séance</h3>
     <p class="modal-sub" id="modal-sub"></p>
+    <div class="form-group" style="margin-bottom:.75rem">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);" id="missed-label">
+        <input type="checkbox" id="missed-check" onchange="toggleMissed(this)" style="width:16px;height:16px;accent-color:var(--race);cursor:pointer;">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">Séance non réalisée</div>
+          <div style="font-size:11px;color:var(--muted)">Note la raison ci-dessous si tu veux</div>
+        </div>
+      </label>
+    </div>
     <div id="modal-fields"></div>
     <div id="modal-body-zones" style="display:none">
       <div class="form-group">
@@ -345,13 +353,13 @@ main{max-width:1160px;margin:0 auto;padding:2rem;}
         <button class="rating-btn" onclick="setFeeling(5,this)">🔥</button>
       </div>
     </div>
-    <div class="wellness-modal-grid">
+    <div id="wellness-section"><div class="wellness-modal-grid">
       <div class="form-group" style="margin:0"><label class="form-label">Énergie /10</label><div class="score-selector" id="w-energy"></div></div>
       <div class="form-group" style="margin:0"><label class="form-label">Sommeil /10</label><div class="score-selector" id="w-sleep"></div></div>
       <div class="form-group" style="margin:0"><label class="form-label">Douleur tibia /10</label><div class="score-selector" id="w-tibia"></div></div>
       <div class="form-group" style="margin:0"><label class="form-label">Motivation /10</label><div class="score-selector" id="w-motivation"></div></div>
     </div>
-    <div class="form-group"><label class="form-label">Fatigue musculaire /10</label><div class="score-selector" id="w-fatigue"></div></div>
+    <div class="form-group"><label class="form-label">Fatigue musculaire /10</label><div class="score-selector" id="w-fatigue"></div></div></div>
     <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" id="modal-notes" rows="2" placeholder="Sensations, douleurs, météo…" style="resize:none"></textarea></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Annuler</button>
@@ -544,11 +552,118 @@ days:[
 let logs = JSON.parse(localStorage.getItem('tri-verdun-v4') || '[]');
 let weekOverrides = JSON.parse(localStorage.getItem('tri-overrides-v4') || '{}');
 let currentModal = null, currentFeeling = 3;
-let wellnessScores = {energy:5,sleep:7,tibia:1,motivation:8,fatigue:4};
+let wellnessScores = {energy:5,sleep:7,tibia:0,motivation:8,fatigue:4};
 let selectedZones = [];
 const feelingEmoji = ['','😴','😐','🙂','💪','🔥'];
 const ZONE_LABELS = {jambes:'🦵 Jambes',core:'💪 Core',epaules:'🏊 Épaules/Dos',mollets:'⚠️ Mollets/Tibias',mobilite:'🧘 Mobilité'};
 const ZONE_COLORS = {jambes:'var(--run)',core:'var(--swim)',epaules:'var(--brick)',mollets:'var(--race)',mobilite:'var(--bike)'};
+
+
+// ============================================================
+// GOOGLE SHEETS SYNC
+// ============================================================
+const GS_URL = 'https://script.google.com/macros/s/AKfycbxHriMzd6MKuTkLgQJZeLu7xy1teAL9VJADLeIY2NKMomDtTko_rLBEe4CAKQHaofYG/exec';
+
+const GS_HEADERS_SEANCES = [
+  'Date','Semaine','Jour','Type','Tag','Manquée',
+  'Durée (min)','Distance','Allure/Vitesse','Tibia douleur',
+  'Ressenti','Énergie','Sommeil','Tibia wellness','Motivation','Fatigue musculaire',
+  'Zones corps','Notes'
+];
+
+const GS_HEADERS_PLANNING = [
+  'Date modification','Semaine','Jour','Session index','Type','Tag','Description'
+];
+
+async function syncToSheets(entry) {
+  try {
+    // Ligne séance
+    let distStr = '';
+    if(entry.type==='swim') distStr = entry.dist ? entry.dist+'m' : '';
+    else if(entry.type==='bike') distStr = entry.dist ? entry.dist+' km' : '';
+    else if(entry.type==='run') distStr = entry.dist ? entry.dist+' km' : '';
+    else if(entry.type==='brick') distStr = [entry.bikeDist?entry.bikeDist+' km vélo':'', entry.runDist?entry.runDist+' km CAP':''].filter(Boolean).join(' / ');
+
+    let paceStr = '';
+    if(entry.pace) paceStr = entry.pace + (entry.type==='swim'?'/100m':'/km');
+    else if(entry.speed) paceStr = entry.speed+' km/h';
+
+    const w = entry.wellness || {};
+    const row = [
+      entry.date,
+      'S'+(PLAN[entry.wi]?.week||entry.wi+1),
+      entry.dayLabel,
+      entry.type,
+      entry.tag,
+      entry.missed ? 'Oui' : 'Non',
+      entry.dur || '',
+      distStr,
+      paceStr,
+      entry.tibia || 0,
+      entry.missed ? 'Non réalisée' : (feelingEmoji[entry.feeling]||''),
+      w.energy||'', w.sleep||'', w.tibia||0, w.motivation||'', w.fatigue||'',
+      entry.bodyZones ? entry.bodyZones.map(z=>ZONE_LABELS[z]).join(', ') : '',
+      entry.notes || ''
+    ];
+
+    await fetch(GS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({tab:'Séances', headers:GS_HEADERS_SEANCES, row})
+    });
+    showSyncStatus('✓ Sauvegardé dans Google Sheets', 'success');
+  } catch(err) {
+    console.warn('Google Sheets sync failed:', err);
+    showSyncStatus('⚠️ Sync Google Sheets échouée', 'error');
+  }
+}
+
+async function syncPlanningToSheets(wi) {
+  try {
+    const days = getWeekDays(wi);
+    const dayNames = PLAN[wi].days.map(d=>d.day);
+    for(let di=0; di<days.length; di++){
+      const d = days[di];
+      for(let si=0; si<d.sessions.length; si++){
+        const s = d.sessions[si];
+        const row = [
+          new Date().toLocaleDateString('fr-CA'),
+          'S'+(PLAN[wi].week),
+          dayNames[di],
+          si,
+          s.type,
+          s.tag,
+          s.desc.replace(/\n/g,' ')
+        ];
+        await fetch(GS_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({tab:'Planning modifié', headers:GS_HEADERS_PLANNING, row})
+        });
+      }
+    }
+  } catch(err) {
+    console.warn('Planning sync failed:', err);
+  }
+}
+
+function showSyncStatus(msg, type) {
+  let el = document.getElementById('sync-status');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'sync-status';
+    el.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:10px;font-size:13px;font-family:Outfit,sans-serif;z-index:300;transition:opacity .5s;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.background = type==='success' ? 'rgba(134,239,172,.15)' : 'rgba(225,29,72,.15)';
+  el.style.border = type==='success' ? '1px solid rgba(134,239,172,.3)' : '1px solid rgba(225,29,72,.3)';
+  el.style.color = type==='success' ? 'var(--bike)' : 'var(--race)';
+  setTimeout(()=>{ el.style.opacity='0'; }, 3000);
+}
 
 function saveStorage(){ localStorage.setItem('tri-verdun-v4',JSON.stringify(logs)); }
 function saveOverrides(){ localStorage.setItem('tri-overrides-v4',JSON.stringify(weekOverrides)); }
@@ -572,54 +687,101 @@ function updateCountdown(){
 }
 
 // ============================================================
-// DRAG & DROP — chaque session-cell draggable individuellement
-// Glisse une seance sport vers un autre jour (echange si=0 sport)
-// Glisse une seance renfo vers un autre renfo (echange si=1)
+// DRAG & DROP
+// - Chaque session-cell est draggable (sauf rest/race)
+// - On peut déposer sur n'importe quel day-col (même vide)
+// - Le dépôt DÉPLACE la séance (pas échange) : elle est retirée
+//   de son jour source et ajoutée au jour destination
 // ============================================================
 let dragSrc = null;
+
+function clearDragOver(){
+  document.querySelectorAll('.session-cell,.day-col').forEach(c=>c.classList.remove('drag-over'));
+}
+
+function applyDrop(wi, destDi){
+  if(!dragSrc || dragSrc.di===destDi){ dragSrc=null; return; }
+  const days = getWeekDays(wi).map(d=>({...d,sessions:d.sessions.map(s=>({...s}))}));
+  const dayNames = PLAN[wi].days.map(d=>d.day);
+
+  // Extraire la session source
+  const srcSession = days[dragSrc.di].sessions[dragSrc.si];
+
+  // Retirer du jour source
+  days[dragSrc.di].sessions.splice(dragSrc.si, 1);
+
+  // Si le jour source devient vide, mettre repos
+  if(days[dragSrc.di].sessions.length === 0){
+    days[dragSrc.di].sessions = [{type:'rest',tag:'Repos',desc:'Jour libre'}];
+  }
+
+  // Ajouter au jour destination
+  // Si le jour destination n'a que repos, remplacer le repos
+  const destSessions = days[destDi].sessions;
+  if(destSessions.length===1 && destSessions[0].type==='rest'){
+    days[destDi].sessions = [srcSession];
+  } else {
+    days[destDi].sessions.push(srcSession);
+  }
+
+  days.forEach((d,i)=>d.day=dayNames[i]);
+  weekOverrides[wi] = days;
+  saveOverrides();
+  syncPlanningToSheets(wi); // Google Sheets backup planning
+  dragSrc = null;
+  renderPlan();
+  setTimeout(()=>{ if(!document.getElementById('week-'+wi).classList.contains('open')) toggleWeek(wi); },50);
+}
+
 function initDragDrop(wi){
-  const cells = document.querySelectorAll(`.session-cell[data-wi="${wi}"]`);
-  cells.forEach(cell=>{
+  // Rendre les session-cells draggables
+  document.querySelectorAll(`.session-cell[data-wi="${wi}"]`).forEach(cell=>{
     const di=parseInt(cell.dataset.di), si=parseInt(cell.dataset.si);
     const days=getWeekDays(wi);
     const sType=days[di]?.sessions[si]?.type;
     if(sType==='rest'||sType==='race') return;
     cell.setAttribute('draggable','true');
+
     cell.addEventListener('dragstart',e=>{
       dragSrc={wi,di,si};
-      cell.classList.add('dragging');
+      setTimeout(()=>cell.classList.add('dragging'),0);
       e.dataTransfer.effectAllowed='move';
       e.stopPropagation();
     });
     cell.addEventListener('dragend',()=>{
       cell.classList.remove('dragging');
-      document.querySelectorAll('.session-cell').forEach(c=>c.classList.remove('drag-over'));
+      clearDragOver();
     });
     cell.addEventListener('dragover',e=>{
       e.preventDefault(); e.stopPropagation();
-      if(!dragSrc) return;
-      document.querySelectorAll('.session-cell').forEach(c=>c.classList.remove('drag-over'));
+      clearDragOver();
       cell.classList.add('drag-over');
     });
-    cell.addEventListener('dragleave',()=>cell.classList.remove('drag-over'));
+    cell.addEventListener('dragleave',e=>{
+      if(!cell.contains(e.relatedTarget)) cell.classList.remove('drag-over');
+    });
     cell.addEventListener('drop',e=>{
       e.preventDefault(); e.stopPropagation();
-      cell.classList.remove('drag-over');
-      if(!dragSrc) return;
-      const destDi=parseInt(cell.dataset.di), destSi=parseInt(cell.dataset.si);
-      if(dragSrc.di===destDi&&dragSrc.si===destSi){ dragSrc=null; return; }
-      const days=getWeekDays(wi).map(d=>({...d,sessions:d.sessions.map(s=>({...s}))}));
-      const dayNames=PLAN[wi].days.map(d=>d.day);
-      // Echange uniquement les 2 sessions concernees
-      const tmp=days[dragSrc.di].sessions[dragSrc.si];
-      days[dragSrc.di].sessions[dragSrc.si]=days[destDi].sessions[destSi];
-      days[destDi].sessions[destSi]=tmp;
-      days.forEach((d,i)=>d.day=dayNames[i]);
-      weekOverrides[wi]=days;
-      saveOverrides();
-      renderPlan();
-      if(!document.getElementById('week-'+wi).classList.contains('open')) toggleWeek(wi);
-      dragSrc=null;
+      clearDragOver();
+      applyDrop(wi, parseInt(cell.dataset.di));
+    });
+  });
+
+  // Rendre les day-col drop targets (pour déposer sur un jour vide ou entre séances)
+  document.querySelectorAll(`.day-col[data-wi="${wi}"]`).forEach(col=>{
+    col.addEventListener('dragover',e=>{
+      e.preventDefault();
+      clearDragOver();
+      col.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave',e=>{
+      if(!col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+    });
+    col.addEventListener('drop',e=>{
+      // Ne traiter que si le drop n'a pas déjà été géré par une session-cell enfant
+      e.preventDefault();
+      clearDragOver();
+      applyDrop(wi, parseInt(col.dataset.di));
     });
   });
 }
@@ -646,7 +808,7 @@ function renderPlan(){
     const totalSess=allSessions.length;
     const progress=totalSess?Math.round(loggedCount/totalSess*100):0;
     let badge=isPast?`<span class="badge-complete">✓ ${loggedCount}/${totalSess}</span>`:isCurr?`<span class="badge-current">← en cours</span>`:week.vacances?`<span class="badge-vacances">🏖️ vacances</span>`:`<span class="badge-upcoming">à venir</span>`;
-    if(isModified) badge+=`<span style="font-size:10px;color:var(--renfo);background:rgba(244,114,182,.1);padding:2px 7px;border-radius:99px;border:1px solid rgba(244,114,182,.2)">✏️ modifiée</span>`;
+
     html+=`<div class="week-card${isCurr?' current':''}${isPast?' completed':''}" id="week-${wi}">
       <div class="week-header" onclick="toggleWeek(${wi})">
         <div class="week-title-group">
@@ -666,7 +828,7 @@ function renderPlan(){
         <div class="week-goal"><strong>Objectif :</strong> ${week.goal}</div>
         ${week.summary?`<div class="week-summary">${week.summary.map(s=>`<span>${s}</span>`).join('')}</div>`:''}
         <div class="week-edit-hint">
-          ⠿ Glisse une séance vers un autre jour pour la déplacer (sport avec sport, renfo avec renfo)
+          ⠿ Glisse une séance vers n'importe quel jour pour la déplacer
           ${isModified?`<button onclick="resetWeek(${wi},event)" style="background:none;border:1px solid var(--border);border-radius:99px;color:var(--muted2);font-size:10px;padding:2px 8px;cursor:pointer;font-family:'Outfit',sans-serif">↩ Réinitialiser</button>`:''}
         </div>
         <div class="days-grid">
@@ -680,10 +842,10 @@ function renderPlan(){
                 const isRest=s.type==='rest';
                 const isRenfo=s.type==='renfo';
                 const zoneBadges=log&&log.bodyZones?log.bodyZones.map(z=>`<span style="font-size:9px;padding:1px 5px;border-radius:99px;background:${ZONE_COLORS[z]}22;color:${ZONE_COLORS[z]};display:inline-block;margin:1px">${ZONE_LABELS[z]}</span>`).join(''):'';
-                return `${isRenfo&&si>0?`<div class="renfo-separator">renfo</div>`:''}
+                return `
                 <div class="session-cell${isRest?' rest-cell':''}${log?' logged-cell':''}${isRenfo?' renfo-cell':''}" data-wi="${wi}" data-di="${di}" data-si="${si}">
                   ${!isRest?`<span class="drag-handle" title="Glisser cette séance">⠿</span>`:''}
-                  ${log&&!isRest?'<span class="done-check">✓</span>':''}
+                  ${log&&!isRest?(log.missed?'<span style="position:absolute;top:6px;right:6px;color:var(--rest);font-size:11px">✗</span>':'<span class="done-check">✓</span>'):''}
                   <span class="session-tag ${getTagClass(s.type)}">${s.tag}</span>
                   <div class="session-desc">${s.desc.replace(/\n/g,'<br>')}</div>
                   ${s.extra?`<div class="session-extra">${s.extra}</div>`:''}
@@ -713,10 +875,26 @@ function resetWeek(wi,e){ e.stopPropagation(); delete weekOverrides[wi]; saveOve
 // ============================================================
 function buildScoreSelector(id,current){
   let h='';
-  for(let i=1;i<=10;i++) h+=`<button class="score-btn${current===i?' selected':''}" onclick="setWellness('${id}',${i},this)">${i}</button>`;
+  for(let i=0;i<=10;i++) h+=`<button class="score-btn${current===i?' selected':''}" onclick="setWellness('${id}',${i},this)">${i}</button>`;
   return h;
 }
 function toggleZone(zone,el){ el.classList.toggle('active'); selectedZones.includes(zone)?selectedZones=selectedZones.filter(z=>z!==zone):selectedZones.push(zone); }
+
+function toggleMissed(cb){
+  const fieldsDiv = document.getElementById('modal-fields');
+  const zonesDiv = document.getElementById('modal-body-zones');
+  const wellnessSection = document.getElementById('wellness-section');
+  if(cb.checked){
+    fieldsDiv.style.opacity='0.35';
+    fieldsDiv.style.pointerEvents='none';
+    zonesDiv.style.display='none';
+    if(wellnessSection) wellnessSection.style.display='none';
+  } else {
+    fieldsDiv.style.opacity='1';
+    fieldsDiv.style.pointerEvents='auto';
+    if(wellnessSection) wellnessSection.style.display='block';
+  }
+}
 
 function openModal(wi,di,si,e){
   e.stopPropagation();
@@ -724,11 +902,16 @@ function openModal(wi,di,si,e){
   const ex=getLog(wi,di,si);
   currentModal={wi,di,si};
   currentFeeling=ex?ex.feeling:3;
-  wellnessScores=ex?{...ex.wellness}:{energy:5,sleep:7,tibia:1,motivation:8,fatigue:4};
+  wellnessScores=ex?{...ex.wellness}:{energy:5,sleep:7,tibia:0,motivation:8,fatigue:4};
   selectedZones=ex&&ex.bodyZones?[...ex.bodyZones]:[];
   document.getElementById('modal-title').textContent=`${session.tag} — ${day.day} · S${week.week}`;
   document.getElementById('modal-sub').textContent=`${week.dates} · ${week.label}`;
   document.getElementById('modal-notes').value=ex?(ex.notes||''):'';
+  const missedCb = document.getElementById('missed-check');
+  if(missedCb){
+    missedCb.checked = ex ? !!ex.missed : false;
+    toggleMissed(missedCb);
+  }
   document.querySelectorAll('.rating-btn').forEach((b,i)=>b.classList.toggle('selected',i+1===currentFeeling));
   ['energy','sleep','tibia','motivation','fatigue'].forEach(k=>{ const el=document.getElementById('w-'+k); if(el) el.innerHTML=buildScoreSelector(k,wellnessScores[k]); });
   const isRenfo=session.type==='renfo';
@@ -755,7 +938,9 @@ function saveLog(){
   const{wi,di,si}=currentModal;
   const days=getWeekDays(wi),day=days[di],session=day.sessions[si];
   const gv=id=>{const el=document.getElementById(id);return el?el.value:'';};
-  const entry={key:getLogKey(wi,di,si),wi,di,si,type:session.type,tag:session.tag,weekLabel:PLAN[wi].label,dayLabel:day.day,feeling:currentFeeling,wellness:{...wellnessScores},notes:document.getElementById('modal-notes').value,date:new Date().toLocaleDateString('fr-CA')};
+  const missedCb2 = document.getElementById('missed-check');
+  const isMissed = missedCb2 ? missedCb2.checked : false;
+  const entry={key:getLogKey(wi,di,si),wi,di,si,type:session.type,tag:session.tag,weekLabel:PLAN[wi].label,dayLabel:day.day,feeling:isMissed?0:currentFeeling,wellness:isMissed?{}:{...wellnessScores},notes:document.getElementById('modal-notes').value,date:new Date().toLocaleDateString('fr-CA'),missed:isMissed};
   if(selectedZones.length) entry.bodyZones=[...selectedZones];
   if(session.type==='swim'){entry.dist=parseFloat(gv('f-dist'))||null;entry.dur=parseFloat(gv('f-dur'))||null;entry.pace=gv('f-pace')||null;}
   else if(session.type==='bike'){entry.dist=parseFloat(gv('f-dist'))||null;entry.dur=parseFloat(gv('f-dur'))||null;entry.speed=parseFloat(gv('f-speed'))||null;}
@@ -766,6 +951,7 @@ function saveLog(){
   logs.push(entry);
   logs.sort((a,b)=>a.key.localeCompare(b.key));
   saveStorage();
+  syncToSheets(entry); // Google Sheets backup
   closeModal();renderPlan();renderJournal();renderStats();
 }
 
@@ -777,6 +963,7 @@ function renderJournal(){
   document.getElementById('total-logged').textContent=`${logs.length} séance(s) enregistrée(s)`;
   if(!logs.length){container.innerHTML=`<div class="empty-state"><div class="big">📋</div><p>Aucune séance logguée.<br>Lance-toi !</p></div>`;return;}
   container.innerHTML=[...logs].reverse().map(l=>{
+    if(l.missed) return `<div class="log-entry"><div class="entry-dot" style="background:var(--rest);margin-top:3px"></div><div><div class="entry-top"><span class="session-tag tag-rest" style="margin-right:6px">${l.tag}</span>${l.dayLabel} · S${PLAN[l.wi]?.week||l.wi+1} <span style="font-size:10px;color:var(--muted2);background:var(--bg3);padding:2px 8px;border-radius:99px;margin-left:4px">✗ non réalisée</span></div><div class="entry-meta">${l.date} · ${l.weekLabel}</div>${l.notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">"${l.notes}"</div>`:''}</div><div style="font-size:20px;opacity:.4">😶</div></div>`;
     let det='';
     if(l.type==='swim') det=[l.dist?l.dist+'m':null,l.dur?l.dur+' min':null,l.pace?l.pace+'/100m':null].filter(Boolean).join(' · ');
     else if(l.type==='bike') det=[l.dist?l.dist+' km':null,l.dur?l.dur+' min':null,l.speed?l.speed+' km/h':null].filter(Boolean).join(' · ');
