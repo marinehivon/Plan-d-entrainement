@@ -628,7 +628,8 @@ async function syncToSheets(entry) {
       motivation:w.motivation || '',
       fatigue:   w.fatigue || '',
       zones:     entry.bodyZones ? entry.bodyZones.map(z=>ZONE_LABELS[z]).join(', ') : '',
-      notes:     entry.notes || ''
+      notes:     entry.notes || '',
+      key:       entry.key || ''
     });
 
     await fetch(GS_URL + '?' + params.toString(), { mode: 'no-cors' });
@@ -675,14 +676,104 @@ function showSyncStatus(msg, type) {
   }
   el.textContent = msg;
   el.style.opacity = '1';
-  el.style.background = type==='success' ? 'rgba(134,239,172,.15)' : 'rgba(225,29,72,.15)';
-  el.style.border = type==='success' ? '1px solid rgba(134,239,172,.3)' : '1px solid rgba(225,29,72,.3)';
-  el.style.color = type==='success' ? 'var(--bike)' : 'var(--race)';
-  setTimeout(()=>{ el.style.opacity='0'; }, 3000);
+  if(type==='success'){
+    el.style.background='rgba(134,239,172,.15)';
+    el.style.border='1px solid rgba(134,239,172,.3)';
+    el.style.color='var(--bike)';
+    setTimeout(()=>{ el.style.opacity='0'; }, 3000);
+  } else if(type==='loading'){
+    el.style.background='rgba(125,211,252,.1)';
+    el.style.border='1px solid rgba(125,211,252,.2)';
+    el.style.color='var(--swim)';
+    // Pas de timeout pour loading, il sera remplacé
+  } else {
+    el.style.background='rgba(225,29,72,.15)';
+    el.style.border='1px solid rgba(225,29,72,.3)';
+    el.style.color='var(--race)';
+    setTimeout(()=>{ el.style.opacity='0'; }, 4000);
+  }
 }
 
 function saveStorage(){ localStorage.setItem('tri-verdun-v4',JSON.stringify(logs)); }
 function saveOverrides(){ localStorage.setItem('tri-overrides-v4',JSON.stringify(weekOverrides)); }
+
+// ============================================================
+// CHARGEMENT DEPUIS GOOGLE SHEETS AU DÉMARRAGE
+// ============================================================
+let gsLoaded = false;
+
+async function loadFromSheets() {
+  showSyncStatus('⟳ Chargement des données...', 'loading');
+  try {
+    const resp = await fetch(GS_URL + '?action=read');
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+
+    if(data.seances && data.seances.length > 0) {
+      const rebuilt = data.seances.map(row => {
+        const key = row[18] || '';
+        if(!key) return null;
+        const match = key.match(/w(\d+)-d(\d+)-s(\d+)/);
+        if(!match) return null;
+        const wi=parseInt(match[1]), di=parseInt(match[2]), si=parseInt(match[3]);
+        const feelingMap = {'😴':1,'😐':2,'🙂':3,'💪':4,'🔥':5};
+        const feeling = feelingMap[row[10]] || 3;
+        const entry = {
+          key, wi, di, si,
+          date: String(row[0]||''),
+          weekLabel: String(row[1]||''),
+          dayLabel: String(row[2]||''),
+          type: String(row[3]||''),
+          tag: String(row[4]||''),
+          missed: row[5]==='Oui',
+          dur: parseFloat(row[6])||null,
+          feeling,
+          tibia: parseFloat(row[9])||0,
+          wellness: {
+            energy: parseFloat(row[11])||0,
+            sleep: parseFloat(row[12])||0,
+            tibia: parseFloat(row[13])||0,
+            motivation: parseFloat(row[14])||0,
+            fatigue: parseFloat(row[15])||0,
+          },
+          bodyZones: row[16] ? String(row[16]).split(', ').map(l=>{
+            const rev = Object.entries(ZONE_LABELS).find(([k,v])=>v===l);
+            return rev ? rev[0] : null;
+          }).filter(Boolean) : [],
+          notes: String(row[17]||'')
+        };
+        const distStr = String(row[7]||'');
+        const paceStr = String(row[8]||'');
+        if(entry.type==='swim'){ entry.dist=parseFloat(distStr)||null; entry.pace=paceStr.replace('/100m',''); }
+        else if(entry.type==='bike'){ entry.dist=parseFloat(distStr)||null; entry.speed=parseFloat(paceStr)||null; }
+        else if(entry.type==='run'){ entry.dist=parseFloat(distStr)||null; entry.pace=paceStr.replace('/km',''); }
+        else if(entry.type==='brick'){
+          const parts = distStr.split(' / ');
+          entry.bikeDist=parseFloat(parts[0])||null;
+          entry.runDist=parseFloat(parts[1])||null;
+          entry.pace=paceStr.replace('/km','');
+        }
+        return entry;
+      }).filter(Boolean);
+
+      if(rebuilt.length > 0) {
+        logs = rebuilt;
+        saveStorage();
+        showSyncStatus('✓ ' + logs.length + ' séance(s) chargée(s) depuis Google Sheets', 'success');
+      } else {
+        showSyncStatus('✓ Connecté à Google Sheets', 'success');
+      }
+    } else {
+      showSyncStatus('✓ Connecté — aucune donnée encore', 'success');
+    }
+    gsLoaded = true;
+  } catch(err) {
+    console.warn('Impossible de charger depuis Sheets, cache local utilisé:', err);
+    showSyncStatus('⚠️ Hors ligne — données locales utilisées', 'error');
+    gsLoaded = true;
+  }
+  renderPlan(); renderJournal(); renderStats();
+}
 function getRaceDate(){ return new Date('2026-08-08'); }
 function getToday(){ return new Date(); }
 function getWeekStart(wi){ const d=new Date('2026-05-26'); d.setDate(d.getDate()+wi*7); return d; }
@@ -1107,7 +1198,8 @@ function showPage(id,btn){
 document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 updateCountdown();
 setInterval(updateCountdown,60000);
-renderPlan();renderJournal();renderStats();
+// Charger depuis Google Sheets au démarrage (fallback sur localStorage si hors ligne)
+loadFromSheets();
 </script>
 </body>
 </html>
